@@ -1,0 +1,10 @@
+node_modules
+.next
+out
+artifacts
+test-results
+playwright-report
+package-lock.json
+app/fonts.css
+AGENTS.md
+CLAUDE.md
