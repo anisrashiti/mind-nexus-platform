@@ -1,6 +1,35 @@
 import { sqExtra } from "./sq-extra";
 export type Language = "en" | "sq";
 export const sq: Record<string, string> = {
+  "Weekly timetable": "Orari javor",
+  Time: "Ora",
+  "Select each 30-minute block to make it available or unavailable.":
+    "Zgjidhni çdo bllok prej 30 minutash për ta bërë të disponueshëm ose të padisponueshëm.",
+  "This timetable repeats each week.": "Ky orar përsëritet çdo javë.",
+  "Bookings require two consecutive available blocks (1 hour). Session duration: 50 minutes.":
+    "Rezervimet kërkojnë dy blloqe të njëpasnjëshme të disponueshme (1 orë). Kohëzgjatja e seancës: 50 minuta.",
+  "Session duration: 50 minutes": "Kohëzgjatja e seancës: 50 minuta",
+  "1-hour reserved slot": "Orar i rezervuar prej 1 ore",
+  "10-minute buffer": "10 minuta pushim ndërmjet seancave",
+  "Choose your psychologist": "Zgjidhni psikologun tuaj",
+  "Choose a psychologist when booking": "Zgjidhni psikologun gjatë rezervimit",
+  "Choose an available psychologist.": "Zgjidhni një psikolog të disponueshëm.",
+  "Available psychologists": "Psikologët e disponueshëm",
+  "Employee eligibility review available":
+    "Rishikimi i përfitimit të punonjësve është i disponueshëm",
+  "Your three-session allowance is fully used or reserved.":
+    "Të tri seancat tuaja janë përdorur ose rezervuar.",
+  "You can reschedule or cancel an upcoming appointment.":
+    "Mund të ndryshoni orarin ose të anuloni një termin të ardhshëm.",
+  "This appointment cannot be rescheduled.":
+    "Orari i këtij termini nuk mund të ndryshohet.",
+  "Explore support for your well-being with a psychologist you choose.":
+    "Merrni mbështetje për mirëqenien tuaj me një psikolog që e zgjidhni vetë.",
+  "Use 30-minute increments. End must follow start, and breaks must fall within working hours.":
+    "Përdorni hapa prej 30 minutash. Mbarimi duhet të jetë pas fillimit dhe pushimet brenda orarit të punës.",
+  "Use 30-minute increments and an end time after the start.":
+    "Përdorni hapa prej 30 minutash dhe një orë mbarimi pas fillimit.",
+  "Maximum 3 sessions per employee": "Maksimumi 3 seanca për punonjës",
   Home: "Kryefaqja",
   Appointments: "Terminet",
   Messages: "Mesazhet",
@@ -20,7 +49,6 @@ export const sq: Record<string, string> = {
   Contract: "Kontrata",
   Organizations: "Organizatat",
   Psychologists: "Psikologët",
-  Assignments: "Caktimet",
   Services: "Shërbimet",
   "Audit Log": "Regjistri i veprimeve",
   "Sign out": "Dilni",
@@ -36,7 +64,6 @@ export const sq: Record<string, string> = {
     "Mbështetje psikologjike konfidenciale për vende pune më të shëndetshme.",
   "Patient / Employee": "Pacient / Punonjës",
   Psychologist: "Psikolog",
-  "Organization Admin": "Administrator i organizatës",
   "Mind Nexus Admin": "Administrator i Mind Nexus",
   "Good morning, Luljeta.": "Mirëmëngjes, Luljeta.",
   "Good afternoon, Arta.": "Mirëdita, Arta.",
@@ -68,7 +95,6 @@ export const sq: Record<string, string> = {
   "View all": "Shihni të gjitha",
   "Your next session": "Seanca juaj e radhës",
   Online: "Online",
-  "15 minutes": "15 minuta",
   "Clinical Psychologist": "Psikologe klinike",
   "Albanian / English": "Shqip / Anglisht",
   Confidential: "Konfidenciale",
@@ -180,17 +206,13 @@ export const sq: Record<string, string> = {
   "Download report": "Shkarkoni raportin",
   "Contract period": "Periudha e kontratës",
   "Program manager": "Menaxheri i programit",
-  "Assigned psychologists": "Psikologët e caktuar",
   "Active organizations": "Organizata aktive",
   "Active psychologists": "Psikologë aktivë",
   "Eligible employees": "Punonjës me të drejtë përfitimi",
   "Sessions this month": "Seanca këtë muaj",
   "Recent activity": "Aktiviteti i fundit",
   "Organization utilization": "Shfrytëzimi sipas organizatës",
-  "Pending assignments": "Caktime në pritje",
   "Suggested match": "Përputhje e sugjeruar",
-  "Assign psychologist": "Caktoni psikologun",
-  Assigned: "I caktuar",
   "Add psychologist": "Shtoni psikolog",
   Specialties: "Specializimet",
   Languages: "Gjuhët",
@@ -217,7 +239,7 @@ export const sq: Record<string, string> = {
   "Two-factor authentication": "Autentifikimi me dy faktorë",
   "Download my data": "Shkarkoni të dhënat e mia",
   "Privacy preferences": "Preferencat e privatësisë",
-  "Assigned psychologist": "Psikologu i caktuar",
+  "Chosen psychologist": "Psikologu i zgjedhur",
   "Professional bio": "Biografia profesionale",
   "Session services": "Shërbimet e seancave",
   "Secure session": "Seancë private",
@@ -248,12 +270,10 @@ export const sq: Record<string, string> = {
     "Pyetësori i mirëqenies është në dispozicion",
   "New patient message": "Mesazh i ri nga pacienti",
   "Note requires completion": "Shënimi duhet përfunduar",
-  "Employee awaiting assignment": "Punonjës në pritje të caktimit",
   "View report": "Shihni raportin",
   "Program overview": "Përmbledhja e programit",
   "Personal workspace": "Hapësira personale",
   "Clinical workspace": "Hapësira klinike",
-  "Program workspace": "Hapësira e programit",
   "Operations workspace": "Hapësira operative",
 };
 export const translate = (lang: Language, text: string) =>

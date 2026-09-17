@@ -51,6 +51,10 @@ export function SessionRoom({
             {appointment.time}–{endTime(appointment.time)}
           </span>
         </div>
+        <p>
+          {t("1-hour reserved slot")} · {t("Session duration: 50 minutes")} ·{" "}
+          {t("10-minute buffer")}
+        </p>
         <div className="video-stage">
           <div className="video-person">
             <Avatar name={appointment.psychologist} size="large" />

@@ -5,19 +5,39 @@ import { useDemo } from "./demo-context";
 import { Avatar, Button, Badge } from "./ui";
 import { PageHeader } from "./patient";
 export function Messages() {
-  const { t, role, people, messages, setMessages, selectedPatient } = useDemo();
+  const {
+    t,
+    role,
+    people,
+    messages,
+    setMessages,
+    selectedPatient,
+    appointments,
+    hasCareRelationship,
+  } = useDemo();
+  const doctors = Array.from(
+    new Set(
+      appointments
+        .filter((a) => a.patient === "MN-1042" && a.status !== "Cancelled")
+        .map((a) => a.psychologist),
+    ),
+  );
+  const [doctor, setDoctor] = useState(doctors[0] ?? "");
   const [patient, setPatient] = useState(
       role === "patient" ? "MN-1042" : selectedPatient,
     ),
     [draft, setDraft] = useState(""),
     [search, setSearch] = useState(""),
     [mobileConversation, setMobileConversation] = useState(false);
-  const assigned = people.filter(
-    (p) => p.psychologist === "Dr. Luljeta Berisha",
-  );
+  const carePatients = people.filter((p) => hasCareRelationship(p.id));
   const person = people.find((p) => p.id === patient)!;
-  const name = role === "patient" ? "Dr. Luljeta Berisha" : person.name;
-  const list = messages.filter((m) => m.patient === patient);
+  const clinician = role === "patient" ? doctor : "Dr. Luljeta Berisha";
+  const name = role === "patient" ? doctor : person.name;
+  const list = messages.filter(
+    (m) =>
+      m.patient === patient &&
+      (m.psychologist ?? "Dr. Luljeta Berisha") === clinician,
+  );
   const history = useRef<HTMLDivElement>(null);
   useEffect(() => {
     history.current?.scrollTo({
@@ -33,6 +53,7 @@ export function Messages() {
       {
         id: `m${Date.now()}`,
         patient,
+        psychologist: clinician,
         from: role === "patient" ? "patient" : "psychologist",
         text: draft.trim(),
         time:
@@ -70,31 +91,44 @@ export function Messages() {
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          {(role === "patient" ? [people[0]] : assigned)
+          {(role === "patient"
+            ? doctors.map((name) => ({ ...people[0], psychologist: name }))
+            : carePatients
+          )
             .filter((p) =>
-              (role === "patient" ? "Dr. Luljeta Berisha" : p.name)
+              (role === "patient" ? p.psychologist : p.name)
                 .toLowerCase()
                 .includes(search.toLowerCase()),
             )
             .map((p) => (
               <button
-                className={p.id === patient ? "active" : ""}
-                key={p.id}
+                className={
+                  p.id === patient &&
+                  (role !== "patient" || p.psychologist === doctor)
+                    ? "active"
+                    : ""
+                }
+                key={role === "patient" ? p.psychologist : p.id}
                 onClick={() => {
                   setPatient(p.id);
+                  if (role === "patient") setDoctor(p.psychologist);
                   setMobileConversation(true);
                 }}
               >
-                <Avatar
-                  name={role === "patient" ? "Luljeta Berisha" : p.name}
-                />
+                <Avatar name={role === "patient" ? p.psychologist : p.name} />
                 <span>
                   <strong>
-                    {role === "patient" ? "Dr. Luljeta Berisha" : p.name}
+                    {role === "patient" ? p.psychologist : p.name}
                   </strong>
                   <small>
-                    {messages.filter((m) => m.patient === p.id).at(-1)?.text ??
-                      t("Start a conversation")}
+                    {messages
+                      .filter(
+                        (m) =>
+                          m.patient === p.id &&
+                          (m.psychologist ?? "Dr. Luljeta Berisha") ===
+                            (role === "patient" ? p.psychologist : clinician),
+                      )
+                      .at(-1)?.text ?? t("Start a conversation")}
                   </small>
                 </span>
                 {p.id !== "MN-1045" && <i />}
@@ -105,7 +139,7 @@ export function Messages() {
             {t(
               role === "patient"
                 ? "Visible only to you and your psychologist"
-                : "Assigned patients only",
+                : "Patients who chose you",
             )}
           </div>
         </aside>

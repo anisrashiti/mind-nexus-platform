@@ -4,8 +4,13 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   timeout: 60000,
+  webServer: {
+    command: "node tests/serve.mjs",
+    url: "http://127.0.0.1:3100",
+    reuseExistingServer: false,
+  },
   use: {
-    baseURL: "http://localhost:3000",
+    baseURL: "http://127.0.0.1:3100",
     headless: true,
     channel: "chrome",
     viewport: { width: 1440, height: 1000 },

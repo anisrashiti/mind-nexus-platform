@@ -9,16 +9,14 @@ import {
   ShieldCheck,
   Search,
   Users,
-  Check,
   FileText,
   ChevronLeft,
-  Clock3,
 } from "lucide-react";
 import { useDemo } from "./demo-context";
 import { Avatar, Badge, Button, Modal, Privacy, SectionTitle } from "./ui";
 import { PageHeader } from "./patient";
 import { UsageChart } from "./charts";
-import { formatDate, psychologists, usage } from "@/lib/data";
+import { formatDate, endTime, psychologists, usage } from "@/lib/data";
 export const aggregatePrivacy =
   "Individual participation and clinical information remain confidential. Organization reporting is provided in aggregate form.";
 export function downloadCsv(filename: string, rows: (string | number)[][]) {
@@ -180,7 +178,7 @@ export function ProgramOverview({
   );
 }
 export function Eligibility() {
-  const { t, employees, setEmployees, log, role, notify } = useDemo();
+  const { t, employees, setEmployees, log, notify } = useDemo();
   const [search, setSearch] = useState(""),
     [modal, setModal] = useState(""),
     [name, setName] = useState(""),
@@ -210,11 +208,7 @@ export function Eligibility() {
         active: true,
       },
     ]);
-    log(
-      role === "organization" ? "Organization Admin" : "Mind Nexus Admin",
-      "Added employee eligibility",
-      "ELIGIBILITY",
-    );
+    log("Mind Nexus Admin", "Added employee eligibility", "ELIGIBILITY");
     setModal("");
     setName("");
     setEmail("");
@@ -257,7 +251,7 @@ export function Eligibility() {
       }));
     setEmployees((e) => [...e, ...additions]);
     notify(`${additions.length} employees imported.`);
-    log("Organization Admin", "Imported eligibility list", "ELIGIBILITY");
+    log("Mind Nexus Admin", "Imported eligibility list", "ELIGIBILITY");
     setModal("");
   }
   return (
@@ -344,7 +338,7 @@ export function Eligibility() {
                             ),
                           ),
                           log(
-                            "Organization Admin",
+                            "Mind Nexus Admin",
                             "Activated eligibility",
                             e.id,
                           ))
@@ -471,11 +465,7 @@ export function Eligibility() {
                     x.id === deactivate ? { ...x, active: false } : x,
                   ),
                 );
-                log(
-                  "Organization Admin",
-                  "Deactivated eligibility",
-                  deactivate,
-                );
+                log("Mind Nexus Admin", "Deactivated eligibility", deactivate);
                 setDeactivate(null);
                 notify("Eligibility updated.");
               }}
@@ -508,7 +498,7 @@ export function Contract() {
           <div>
             <dt>{t("Purchased sessions")}</dt>
             <dd>
-              500 <small>15-minute online sessions</small>
+              500 <small>{t("Session duration: 50 minutes")}</small>
             </dd>
           </div>
           <div>
@@ -522,7 +512,7 @@ export function Contract() {
             </dd>
           </div>
           <div>
-            <dt>{t("Assigned psychologists")}</dt>
+            <dt>{t("Available psychologists")}</dt>
             <dd>4</dd>
           </div>
           <div>
@@ -535,6 +525,8 @@ export function Contract() {
             <dt>{t("Session delivery")}</dt>
             <dd>
               {t("Online")} · {t("Albanian / English")}
+              <small>{t("1-hour reserved slot")}</small>
+              <small>{t("Maximum 3 sessions per employee")}</small>
             </dd>
           </div>
         </dl>
@@ -575,18 +567,12 @@ export function Reports() {
 export function AdminHome() {
   const { t, navigate, people, roster, employees, audit, appointments } =
     useDemo();
-  const waiting = people.filter((p) => !p.psychologist);
   return (
     <>
       <PageHeader
         title="A clear view of your care network."
         subtitle="Mind Nexus operations · September 2026"
-      >
-        <Button onClick={() => navigate("Assignments")}>
-          {t("Pending assignments")}
-          <Badge tone="light">{waiting.length}</Badge>
-        </Button>
-      </PageHeader>
+      ></PageHeader>
       <div className="metrics org-metrics">
         {[
           ["Active organizations", "1"],
@@ -631,7 +617,9 @@ export function AdminHome() {
             .slice(0, 4)
             .map((a) => (
               <div className="admin-appointment" key={a.id}>
-                <span>{a.time}</span>
+                <span>
+                  {a.time}?{endTime(a.time)}
+                </span>
                 <div>
                   <h3>{people.find((p) => p.id === a.patient)?.name}</h3>
                   <p>{a.psychologist} · Aurora Hospital</p>
@@ -641,31 +629,6 @@ export function AdminHome() {
             ))}
         </section>
         <aside>
-          <SectionTitle title={t("Pending assignments")} />
-          {waiting.length ? (
-            waiting.map((p) => (
-              <div className="pending-person" key={p.id}>
-                <Avatar name={p.name} />
-                <div>
-                  <h3>{p.name}</h3>
-                  <p>
-                    {p.language} · {t("Afternoons")}
-                  </p>
-                </div>
-                <button
-                  className="icon-button"
-                  aria-label={`${t("Assign psychologist")} ${p.name}`}
-                  onClick={() => navigate("Assignments")}
-                >
-                  <ArrowUpRight size={17} />
-                </button>
-              </div>
-            ))
-          ) : (
-            <p className="empty-state">
-              {t("All patients have an assigned psychologist.")}
-            </p>
-          )}
           <SectionTitle
             title={t("Recent activity")}
             action={t("Audit Log")}
@@ -677,7 +640,9 @@ export function AdminHome() {
                 <i />
                 <strong>{t(a.action)}</strong>
                 <p>{a.actor}</p>
-                <small>{a.time}</small>
+                <small>
+                  {a.time}?{endTime(a.time)}
+                </small>
               </div>
             ))}
           </div>
@@ -700,7 +665,7 @@ export function Organizations() {
       </button>
       <ProgramOverview />
       <section className="surface chart-surface">
-        <SectionTitle title={t("Assigned psychologists")} />
+        <SectionTitle title={t("Available psychologists")} />
         <p>{psychologists.join(" · ")}</p>
         <div className="button-group spaced">
           <Button variant="secondary" onClick={() => navigate("Eligibility")}>
@@ -759,122 +724,6 @@ export function Organizations() {
                 </Button>
               </td>
             </tr>
-          </tbody>
-        </table>
-      </div>
-    </>
-  );
-}
-export function Assignments() {
-  const { t, people, setPeople, roster, log, notify } = useDemo();
-  const [selection, setSelection] = useState<Record<string, string>>({});
-  const waiting = people.filter((p) => !p.psychologist);
-  return (
-    <>
-      <PageHeader
-        title="Assignments"
-        subtitle="Connect each employee with the right support."
-      />
-      <div className="assignment-intro">
-        <Clock3 size={19} />
-        <span>
-          {waiting.length} {t("employees awaiting assignment")}
-        </span>
-        <p>
-          {t(
-            "Suggested matches use language and availability only. No AI matching.",
-          )}
-        </p>
-      </div>
-      {waiting.map((p) => (
-        <section className="assignment-row" key={p.id}>
-          <div className="assignment-person">
-            <Avatar name={p.name} size="large" />
-            <div>
-              <h2>{p.name}</h2>
-              <p>{p.id} · Aurora Hospital</p>
-              <div className="assignment-prefs">
-                <span>
-                  {t("Preferred language")}: {p.language}
-                </span>
-                <span>
-                  {t("Availability")}: {t("Afternoons")}
-                </span>
-              </div>
-              <p>
-                {t("Requested support")}: {t("Workplace stress")}
-              </p>
-            </div>
-          </div>
-          <div className="assignment-match">
-            <span className="eyebrow">{t("Suggested match")}</span>
-            <select
-              aria-label={`${t("Psychologist")} ${p.name}`}
-              value={selection[p.id] ?? "Dr. Luljeta Berisha"}
-              onChange={(e) =>
-                setSelection({ ...selection, [p.id]: e.target.value })
-              }
-            >
-              {roster
-                .filter((r) => r.active)
-                .map((r) => (
-                  <option key={r.name}>{r.name}</option>
-                ))}
-            </select>
-            <Button
-              onClick={() => {
-                const match = selection[p.id] ?? "Dr. Luljeta Berisha";
-                if (!roster.some((r) => r.name === match && r.active)) {
-                  notify("Select an active psychologist.");
-                  return;
-                }
-                setPeople(
-                  people.map((x) =>
-                    x.id === p.id ? { ...x, psychologist: match } : x,
-                  ),
-                );
-                log("Mind Nexus Admin", "Assigned psychologist", p.id);
-                notify("Psychologist assigned.");
-              }}
-            >
-              <Check size={16} />
-              {t("Assign psychologist")}
-            </Button>
-          </div>
-        </section>
-      ))}
-      {!waiting.length && (
-        <div className="empty-state">
-          <Check size={30} />
-          <h2>{t("All patients have an assigned psychologist.")}</h2>
-          <p>{t("Your assignment queue is up to date.")}</p>
-        </div>
-      )}
-      <SectionTitle title={t("Current assignments")} />
-      <div className="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              {["Patient", "Psychologist", "Status"].map((x) => (
-                <th key={x}>{t(x)}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {people
-              .filter((p) => p.psychologist)
-              .map((p) => (
-                <tr key={p.id}>
-                  <td>
-                    {p.name}
-                    <small>{p.id}</small>
-                  </td>
-                  <td>{p.psychologist}</td>
-                  <td>
-                    <Badge>{t("Assigned")}</Badge>
-                  </td>
-                </tr>
-              ))}
           </tbody>
         </table>
       </div>
@@ -1034,7 +883,7 @@ export function Psychologists() {
             <h2>{t("Clinical Psychologist")}</h2>
             <p>{roster.find((r) => r.name === selected)?.specialty}</p>
             <Badge>{t("Albanian / English")}</Badge>
-            <p>{t("15-minute online consultations")}</p>
+            <p>{t("Session duration: 50 minutes")}</p>
           </div>
         </Modal>
       )}
@@ -1105,7 +954,9 @@ export function OperationalAppointments() {
                 <td>Aurora Hospital</td>
                 <td>
                   {formatDate(a.date)}
-                  <small>{a.time}</small>
+                  <small>
+                    {a.time}–{endTime(a.time)}
+                  </small>
                 </td>
                 <td>
                   <Badge tone={a.status === "Cancelled" ? "neutral" : "green"}>
@@ -1145,7 +996,7 @@ export function Services() {
             <div>
               <h2>{s.name}</h2>
               <p>
-                15 {t("minutes")} · {t("Online")}
+                {t("Session duration: 50 minutes")} · {t("Online")}
               </p>
             </div>
             <Badge tone={s.active ? "green" : "neutral"}>
@@ -1199,7 +1050,9 @@ export function Services() {
               />
             </label>
             <p className="spaced">
-              {t("Session duration is fixed at 15 minutes for this program.")}
+              {t(
+                "Each reservation lasts 1 hour: 50 minutes of consultation and 10 minutes of buffer time.",
+              )}
             </p>
             <div className="modal-actions">
               <Button>{t("Save changes")}</Button>

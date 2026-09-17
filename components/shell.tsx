@@ -19,7 +19,6 @@ import {
   FileText,
   Building2,
   UserRoundCheck,
-  Waypoints,
   BriefcaseBusiness,
   History,
   Bell,
@@ -54,7 +53,6 @@ const icons: Record<string, typeof Home> = {
   Contract: BriefcaseBusiness,
   Organizations: Building2,
   Psychologists: UserRoundCheck,
-  Assignments: Waypoints,
   Services: BriefcaseBusiness,
   "Audit Log": History,
 };
@@ -78,23 +76,15 @@ export const navigation: Record<Role, string[]> = {
     "Profile",
     "Settings",
   ],
-  organization: [
-    "Overview",
-    "Program Usage",
-    "Eligibility",
-    "Reports",
-    "Contract",
-    "Settings",
-  ],
   admin: [
     "Overview",
     "Organizations",
     "Psychologists",
     "Eligibility",
-    "Assignments",
     "Appointments",
     "Services",
     "Reports",
+    "Contract",
     "Audit Log",
     "Settings",
   ],
@@ -102,7 +92,6 @@ export const navigation: Record<Role, string[]> = {
 export const roleNames: Record<Role, string> = {
   patient: "Patient / Employee",
   psychologist: "Psychologist",
-  organization: "Organization Admin",
   admin: "Mind Nexus Admin",
 };
 export function Shell({ children }: { children: React.ReactNode }) {
@@ -128,9 +117,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
       ? "Arta Krasniqi"
       : role === "psychologist"
         ? "Dr. Luljeta Berisha"
-        : role === "organization"
-          ? "Aurora Hospital"
-          : "Mind Nexus Team";
+        : "Mind Nexus Team";
   const alerts =
     role === "patient"
       ? [
@@ -145,13 +132,12 @@ export function Shell({ children }: { children: React.ReactNode }) {
             "Note requires completion",
           ]
         : [
-            "Employee awaiting assignment",
+            "Employee eligibility review available",
             "Program allocation review available",
           ];
   const workspace = {
     patient: "Personal workspace",
     psychologist: "Clinical workspace",
-    organization: "Program workspace",
     admin: "Operations workspace",
   }[role];
   const go = (p: string) => {
@@ -186,7 +172,6 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 <Icon size={19} strokeWidth={1.6} />
                 <span>{t(item)}</span>
                 {item === "Messages" && <small>3</small>}
-                {item === "Assignments" && <span className="nav-dot" />}
               </button>
             );
           })}
@@ -321,8 +306,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
                                     : i === 1
                                       ? "Messages"
                                       : "Patients"
-                                  : role === "admin"
-                                    ? "Assignments"
+                                  : i === 0
+                                    ? "Eligibility"
                                     : "Reports",
                             );
                             setNotifications(false);

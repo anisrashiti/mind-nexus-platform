@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -15,7 +15,7 @@ import {
   Check,
   LockKeyhole,
 } from "lucide-react";
-import { useDemo, type Note, type Hours } from "./demo-context";
+import { useDemo, type Note } from "./demo-context";
 import {
   Avatar,
   Badge,
@@ -27,12 +27,18 @@ import {
 } from "./ui";
 import { PageHeader, questions } from "./patient";
 import { TrendChart } from "./charts";
+import { isHalfHour, halfHourTimes } from "@/lib/scheduling";
 import { formatDate, endTime, type Appointment } from "@/lib/data";
 export function ClinicianHome() {
   const { t, navigate, appointments, people, notes, setSelectedPatient } =
     useDemo();
   const today = appointments
-    .filter((a) => a.date === "2026-09-14" && a.status === "Upcoming")
+    .filter(
+      (a) =>
+        a.date === "2026-09-14" &&
+        a.status === "Upcoming" &&
+        a.psychologist === "Dr. Luljeta Berisha",
+    )
     .sort((a, b) => a.time.localeCompare(b.time));
   function open(a: Appointment) {
     setSelectedPatient(a.patient);
@@ -67,7 +73,7 @@ export function ClinicianHome() {
       </div>
       <div className="metrics clinician-metrics">
         {[
-          ["Today’s sessions", today.length, "15 minutes each"],
+          ["Today’s sessions", today.length, "Session duration: 50 minutes"],
           ["Active patients", 31, "In your care"],
           [
             "Pending notes",
@@ -114,7 +120,7 @@ export function ClinicianHome() {
                   <p>{t(a.service)}</p>
                   <span>
                     <Video size={12} />
-                    {t("Online")} · {t("15 minutes")}
+                    {t("Online")} · {t("Session duration: 50 minutes")}
                   </span>
                 </div>
                 <Button
@@ -205,12 +211,19 @@ export function ClinicianHome() {
   );
 }
 export function Patients() {
-  const { t, people, appointments, navigate, setSelectedPatient, log } =
-    useDemo();
+  const {
+    t,
+    people,
+    appointments,
+    navigate,
+    setSelectedPatient,
+    log,
+    hasCareRelationship,
+  } = useDemo();
   const [search, setSearch] = useState("");
   const list = people.filter(
     (p) =>
-      p.psychologist === "Dr. Luljeta Berisha" &&
+      hasCareRelationship(p.id) &&
       (p.name + " " + p.id).toLowerCase().includes(search.toLowerCase()),
   );
   return (
@@ -229,7 +242,7 @@ export function Patients() {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <Badge tone="neutral">{t("Assigned patients only")}</Badge>
+        <Badge tone="neutral">{t("Patients who chose you")}</Badge>
       </div>
       <div className="table-wrap">
         <table>
@@ -303,10 +316,18 @@ export function Patients() {
   );
 }
 export function PatientDetail() {
-  const { t, people, selectedPatient, appointments, notes, navigate, checkin } =
-    useDemo();
+  const {
+    t,
+    people,
+    selectedPatient,
+    appointments,
+    notes,
+    navigate,
+    checkin,
+    hasCareRelationship,
+  } = useDemo();
   const p = people.find(
-    (p) => p.id === selectedPatient && p.psychologist === "Dr. Luljeta Berisha",
+    (p) => p.id === selectedPatient && hasCareRelationship(p.id),
   );
   const [tab, setTab] = useState("Overview"),
     [editing, setEditing] = useState<Note | boolean>(false);
@@ -316,7 +337,9 @@ export function PatientDetail() {
         {t("Patient unavailable in your workspace.")}
       </div>
     );
-  const appts = appointments.filter((a) => a.patient === p.id);
+  const appts = appointments.filter(
+    (a) => a.patient === p.id && a.psychologist === "Dr. Luljeta Berisha",
+  );
   const next = appts
     .filter((a) => a.status === "Upcoming")
     .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))[0];
@@ -386,7 +409,7 @@ export function PatientDetail() {
                 <dd>{p.language}</dd>
               </div>
               <div>
-                <dt>{t("Assigned psychologist")}</dt>
+                <dt>{t("Chosen psychologist")}</dt>
                 <dd>{p.psychologist}</dd>
               </div>
             </dl>
@@ -518,7 +541,10 @@ export function NoteEditor({
     [interval, setInterval] = useState(note?.interval ?? "1 week"),
     [session, setSession] = useState(
       note?.session ??
-        appointments.find((a) => a.patient === patientId)?.id ??
+        appointments.find(
+          (a) =>
+            a.patient === patientId && a.psychologist === "Dr. Luljeta Berisha",
+        )?.id ??
         "",
     );
   const p = people.find((p) => p.id === patientId)!;
@@ -694,7 +720,7 @@ export function AssessmentContent({
   );
 }
 export function Assessments() {
-  const { t, people } = useDemo();
+  const { t, people, hasCareRelationship } = useDemo();
   const [id, setId] = useState("MN-1042");
   return (
     <>
@@ -706,7 +732,7 @@ export function Assessments() {
         {t("Patient")}
         <select value={id} onChange={(e) => setId(e.target.value)}>
           {people
-            .filter((p) => p.psychologist === "Dr. Luljeta Berisha")
+            .filter((p) => hasCareRelationship(p.id))
             .map((p) => (
               <option value={p.id} key={p.id}>
                 {p.name}
@@ -720,32 +746,30 @@ export function Assessments() {
 }
 export function Availability() {
   const { t, hours, setHours, timeOff, setTimeOff, notify, log } = useDemo();
+  const timetable = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (timetable.current) timetable.current.scrollTop = 16 * 38;
+  }, []);
   const [draft, setDraft] = useState(hours),
     [off, setOff] = useState(false),
     [start, setStart] = useState("2026-09-21"),
-    [end, setEnd] = useState("2026-09-25"),
-    [error, setError] = useState("");
-  function update(i: number, change: Partial<Hours>) {
-    setDraft((d) => d.map((v, j) => (j === i ? { ...v, ...change } : v)));
+    [end, setEnd] = useState("2026-09-25");
+  function toggle(day: number, time: string) {
+    setDraft((days) =>
+      days.map((d, i) =>
+        i !== day
+          ? d
+          : {
+              ...d,
+              slots: d.slots.includes(time)
+                ? d.slots.filter((s) => s !== time)
+                : [...d.slots, time].sort(),
+            },
+      ),
+    );
   }
   function save() {
-    if (
-      draft.some(
-        (h) =>
-          h.active &&
-          (h.start >= h.end ||
-            h.breakStart >= h.breakEnd ||
-            h.breakStart < h.start ||
-            h.breakEnd > h.end),
-      )
-    ) {
-      setError(
-        "Check your hours: end must follow start, and breaks must fall within working hours.",
-      );
-      return;
-    }
     setHours(draft);
-    setError("");
     notify("Saved successfully.");
     log(
       "Dr. Luljeta Berisha",
@@ -763,80 +787,79 @@ export function Availability() {
       </PageHeader>
       <div className="availability-layout">
         <section>
-          <SectionTitle title={t("Recurring hours")} />
+          <SectionTitle title={t("Weekly timetable")} />
           <p className="section-subtitle">
-            {t("15-minute sessions")} · Europe/Tirane
+            {t(
+              "Select each 30-minute block to make it available or unavailable.",
+            )}{" "}
+            {t("This timetable repeats each week.")}
           </p>
-          <div className="surface availability-table">
-            <div className="availability-head">
-              <span>{t("Day")}</span>
-              <span>
-                {t("Start")} / {t("End")}
-              </span>
-              <span>{t("Breaks")}</span>
-            </div>
-            {draft.map((h, i) => (
-              <div
-                className={`availability-row ${!h.active ? "disabled" : ""}`}
-                key={h.day}
-              >
-                <label className="checkbox">
-                  <input
-                    type="checkbox"
-                    role="switch"
-                    checked={h.active}
-                    onChange={(e) => update(i, { active: e.target.checked })}
-                  />
-                  {t(h.day)}
-                </label>
-                {h.active ? (
-                  <>
-                    <div>
-                      <input
-                        aria-label={`${h.day} start`}
-                        type="time"
-                        value={h.start}
-                        onChange={(e) => update(i, { start: e.target.value })}
-                      />
-                      <span>—</span>
-                      <input
-                        aria-label={`${h.day} end`}
-                        type="time"
-                        value={h.end}
-                        onChange={(e) => update(i, { end: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <input
-                        aria-label={`${h.day} break start`}
-                        type="time"
-                        value={h.breakStart}
-                        onChange={(e) =>
-                          update(i, { breakStart: e.target.value })
-                        }
-                      />
-                      <span>—</span>
-                      <input
-                        aria-label={`${h.day} break end`}
-                        type="time"
-                        value={h.breakEnd}
-                        onChange={(e) =>
-                          update(i, { breakEnd: e.target.value })
-                        }
-                      />
-                    </div>
-                  </>
-                ) : (
-                  <span>{t("Unavailable")}</span>
-                )}
-              </div>
-            ))}
+          <div className="timetable-legend">
+            <span>
+              <Check size={14} /> {t("Available")}
+            </span>
+            <span>{t("Unavailable")}</span>
+            <span>Europe/Tirane</span>
           </div>
-          {error && (
-            <p className="error" role="alert">
-              {t(error)}
-            </p>
-          )}
+          <div
+            className="surface availability-timetable"
+            ref={timetable}
+            role="region"
+            aria-label={t("Weekly timetable")}
+            tabIndex={0}
+          >
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">{t("Time")}</th>
+                  {draft.map((d) => (
+                    <th scope="col" key={d.day}>
+                      {t(d.day)}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {halfHourTimes.map((time, index) => (
+                  <tr key={time}>
+                    <th scope="row">{time}</th>
+                    {draft.map((d, day) => (
+                      <td key={d.day}>
+                        <button
+                          type="button"
+                          aria-label={t(d.day) + " " + time}
+                          aria-pressed={d.slots.includes(time)}
+                          title={
+                            time +
+                            " - " +
+                            (halfHourTimes[index + 1] ?? "24:00") +
+                            ": " +
+                            t(
+                              d.slots.includes(time)
+                                ? "Available"
+                                : "Unavailable",
+                            )
+                          }
+                          onClick={() => toggle(day, time)}
+                        >
+                          {d.slots.includes(time) ? (
+                            <Check size={15} aria-hidden="true" />
+                          ) : (
+                            <span aria-hidden="true">-</span>
+                          )}
+                        </button>
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="section-subtitle">
+            {t(
+              "Bookings require two consecutive available blocks (1 hour). Session duration: 50 minutes.",
+            )}
+          </p>
         </section>
         <aside className="timeoff-section">
           <SectionTitle title={t("Time off")} />
@@ -915,6 +938,7 @@ export function ClinicianSessions() {
   const { t, appointments, people, navigate, setSelectedPatient } = useDemo();
   const [tab, setTab] = useState("Today");
   const list = appointments
+    .filter((a) => a.psychologist === "Dr. Luljeta Berisha")
     .filter((a) =>
       tab === "Today"
         ? a.date === "2026-09-14" && a.status === "Upcoming"
@@ -1083,34 +1107,41 @@ export function ClinicianCalendar() {
           ))}
           <div className="calendar-times">
             {Array.from({ length: 9 }, (_, i) => (
-              <span key={i}>{String(i + 9).padStart(2, "0")}:00</span>
+              <span key={i}>{String(i + 8).padStart(2, "0")}:00</span>
             ))}
           </div>
           {days.map((d) => (
             <div className="calendar-column" key={d}>
-              {Array.from({ length: 8 }, (_, i) => (
+              {Array.from({ length: 9 }, (_, i) => (
                 <div className="hour-line" key={i} />
               ))}
               {appointments
-                .filter((a) => a.date === d && a.status === "Upcoming")
+                .filter(
+                  (a) =>
+                    a.date === d &&
+                    a.status === "Upcoming" &&
+                    a.psychologist === "Dr. Luljeta Berisha",
+                )
                 .map((a) => {
                   const [h, m] = a.time.split(":").map(Number);
                   return (
                     <button
                       className="calendar-event"
-                      style={{ top: (h - 9) * 96 + m * 1.6 }}
+                      style={{ top: (h - 8) * 96 + m * 1.6, height: 94 }}
                       key={a.id}
                       onClick={() => setSelected(a)}
                     >
                       <strong>
-                        {a.time} ·{" "}
+                        {a.time}–{endTime(a.time)} ·{" "}
                         {
                           people
                             .find((p) => p.id === a.patient)
                             ?.name.split(" ")[0]
                         }
                       </strong>
-                      <span>{t("Online")} · 15 min</span>
+                      <span>
+                        {t("Online")} · {t("Session duration: 50 minutes")}
+                      </span>
                     </button>
                   );
                 })}
@@ -1122,7 +1153,7 @@ export function ClinicianCalendar() {
                     key={i}
                     style={{
                       top:
-                        (Number(b.start.slice(0, 2)) - 9) * 96 +
+                        (Number(b.start.slice(0, 2)) - 8) * 96 +
                         Number(b.start.slice(3)) * 1.6,
                     }}
                     onClick={() => {
@@ -1172,8 +1203,10 @@ export function ClinicianCalendar() {
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              if (start >= end) {
-                notify("End time must follow start time.");
+              if (!isHalfHour(start) || !isHalfHour(end) || start >= end) {
+                notify(
+                  "Use 30-minute increments and an end time after the start.",
+                );
                 return;
               }
               if (
@@ -1181,6 +1214,7 @@ export function ClinicianCalendar() {
                   (a) =>
                     a.date === date &&
                     a.status === "Upcoming" &&
+                    a.psychologist === "Dr. Luljeta Berisha" &&
                     a.time < end &&
                     endTime(a.time) > start,
                 )
@@ -1208,6 +1242,7 @@ export function ClinicianCalendar() {
                 {t("Start")}
                 <input
                   type="time"
+                  step={1800}
                   value={start}
                   onChange={(e) => setStart(e.target.value)}
                 />
@@ -1216,6 +1251,7 @@ export function ClinicianCalendar() {
                 {t("End")}
                 <input
                   type="time"
+                  step={1800}
                   value={end}
                   onChange={(e) => setEnd(e.target.value)}
                 />

@@ -1,15 +1,10 @@
 "use client";
+import { availableSlots, allowance } from "@/lib/scheduling";
 import { useState } from "react";
 import { CalendarDays, Check, Clock3, Video, ArrowRight } from "lucide-react";
 import { useDemo } from "./demo-context";
 import { Avatar, Button, Modal, Privacy } from "./ui";
-import {
-  formatDate,
-  endTime,
-  psychologists,
-  serviceNames,
-  type Appointment,
-} from "@/lib/data";
+import { formatDate, endTime, type Appointment } from "@/lib/data";
 export function Booking({
   onClose,
   appointment,
@@ -21,90 +16,43 @@ export function Booking({
     t,
     lang,
     appointments,
-    setAppointments,
-    updateAppointment,
-    hours,
-    timeOff,
-    blocked,
+    roster,
+    profiles,
+    scheduleFor,
+    reserveAppointment,
     navigate,
     log,
   } = useDemo();
+  const [psychologist, setPsychologist] = useState(
+    appointment?.psychologist ?? "",
+  );
   const [day, setDay] = useState("2026-09-15"),
     [time, setTime] = useState(""),
     [success, setSuccess] = useState(false),
     [error, setError] = useState("");
-  const upcoming = appointments.filter(
-      (x) => x.patient === "MN-1042" && x.status === "Upcoming",
-    ).length,
-    completed = appointments.filter(
-      (x) => x.patient === "MN-1042" && x.status === "Completed",
-    ).length;
-  // Two future reservations are allowed within the five-session allocation.
-  const available = Math.max(0, 5 - completed - upcoming);
+  const available = allowance(appointments, "MN-1042").remaining;
   const dates = Array.from({ length: 14 }, (_, i) => {
     const d = new Date("2026-09-14T12:00:00");
     d.setDate(d.getDate() + i);
     return d.toISOString().slice(0, 10);
   });
-  function slots(date: string) {
-    const d = new Date(date + "T12:00:00");
-    const h = hours[(d.getDay() + 6) % 7];
-    if (!h.active || timeOff.some((x) => date >= x.start && date <= x.end))
-      return [];
-    const result: string[] = [];
-    for (let m = 9 * 60; m < 18 * 60; m += 15) {
-      const s = `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
-      const end = endTime(s);
-      if (
-        s < h.start ||
-        end > h.end ||
-        (s < h.breakEnd && end > h.breakStart) ||
-        (date === "2026-09-14" && s < "14:00")
-      )
-        continue;
-      if (
-        appointments.some(
-          (a) =>
-            a.id !== appointment?.id &&
-            a.date === date &&
-            a.time === s &&
-            a.status === "Upcoming" &&
-            a.psychologist === psychologists[0],
+  function slots(date: string, name = psychologist) {
+    return name
+      ? availableSlots(
+          date,
+          name,
+          "MN-1042",
+          scheduleFor(name),
+          appointments,
+          appointment?.id,
         )
-      )
-        continue;
-      if (blocked.some((b) => b.date === date && s < b.end && end > b.start))
-        continue;
-      result.push(s);
-    }
-    return result;
+      : [];
   }
   function book() {
-    if (!time || !slots(day).includes(time)) {
-      setError("That time is no longer available. Please select another.");
+    const issue = reserveAppointment(psychologist, day, time, appointment);
+    if (issue) {
+      setError(issue);
       return;
-    }
-    if (!appointment && available === 0) {
-      setError(
-        "All remaining sessions are reserved. Reschedule or cancel an existing appointment to change your plans.",
-      );
-      return;
-    }
-    if (appointment) {
-      updateAppointment(appointment.id, { date: day, time });
-    } else {
-      setAppointments((a) => [
-        ...a,
-        {
-          id: `APT-${Date.now()}`,
-          patient: "MN-1042",
-          psychologist: psychologists[0],
-          date: day,
-          time,
-          service: serviceNames[0],
-          status: "Upcoming",
-        },
-      ]);
     }
     log(
       "Arta K.",
@@ -127,6 +75,11 @@ export function Booking({
       onClose={onClose}
       wide
     >
+      <p className="section-subtitle">
+        {t("1-hour reserved slot")} · {t("Session duration: 50 minutes")}
+        <br />
+        {t("10-minute buffer")}
+      </p>
       {success ? (
         <div className="success-state">
           <span className="success-icon">
@@ -137,7 +90,7 @@ export function Booking({
             {formatDate(day, lang)} · {time}–{endTime(time)}
           </p>
           <p>
-            {psychologists[0]} · {t("Online")}
+            {psychologist} · {t("Online")}
           </p>
           <Button
             onClick={() => {
@@ -151,26 +104,28 @@ export function Booking({
         </div>
       ) : (
         <>
-          <div className="booking-doctor">
-            <Avatar name={psychologists[0]} size="large" />
-            <div>
-              <h3>{psychologists[0]}</h3>
-              <p>
-                {t("Clinical Psychologist")} · {t("Albanian / English")}
-              </p>
+          {psychologist && (
+            <div className="booking-doctor">
+              <Avatar name={psychologist} size="large" />
+              <div>
+                <h3>{psychologist}</h3>
+                <p>
+                  {t("Clinical Psychologist")} · {t("Albanian / English")}
+                </p>
+              </div>
+              <span>
+                <Video size={16} />
+                {t("Online")}
+              </span>
             </div>
-            <span>
-              <Video size={16} />
-              {t("15 minutes")}
-            </span>
-          </div>
+          )}
           {!appointment && available === 0 ? (
             <div className="empty-state">
-              <h3>{t("Your remaining sessions are reserved.")}</h3>
+              <h3>
+                {t("Your three-session allowance is fully used or reserved.")}
+              </h3>
               <p>
-                {t(
-                  "Reschedule an existing appointment, or cancel one to free a session.",
-                )}
+                {t("You can reschedule or cancel an upcoming appointment.")}
               </p>
               <Button
                 onClick={() => {
@@ -184,53 +139,105 @@ export function Booking({
           ) : (
             <>
               <h3 className="form-section-title">
-                {t("Choose a day")}{" "}
-                <small>September 2026 · Europe/Tirane</small>
+                {t("Choose your psychologist")}
               </h3>
-              <div className="date-selector">
-                {dates.map((d) => (
-                  <button
-                    key={d}
-                    onClick={() => {
-                      setDay(d);
-                      setTime("");
-                    }}
-                    aria-pressed={day === d}
-                  >
-                    <span>
-                      {new Date(d + "T12:00:00").toLocaleDateString(
-                        lang === "sq" ? "sq-AL" : "en",
-                        { weekday: "short" },
-                      )}
-                    </span>
-                    <strong>{Number(d.slice(-2))}</strong>
-                  </button>
-                ))}
+              <div className="psychologist-options">
+                {roster
+                  .filter((p) => p.active)
+                  .map((p) => (
+                    <button
+                      type="button"
+                      className="surface psychologist-option"
+                      key={p.name}
+                      aria-pressed={psychologist === p.name}
+                      onClick={() => {
+                        setPsychologist(p.name);
+                        setTime("");
+                        setError("");
+                      }}
+                    >
+                      <Avatar name={p.name} size="large" />
+                      <div>
+                        <h3>{p.name}</h3>
+                        <p>{t("Clinical Psychologist")}</p>
+                        <p>
+                          {t(
+                            p.name === roster[0].name
+                              ? (profiles.psychologist?.specialty ??
+                                  p.specialty)
+                              : p.specialty,
+                          )}
+                        </p>
+                        <p>{t(p.languages)}</p>
+                        <p>
+                          {t(
+                            p.name === roster[0].name &&
+                              profiles.psychologist?.bio
+                              ? profiles.psychologist.bio
+                              : "Explore support for your well-being with a psychologist you choose.",
+                          )}
+                        </p>
+                        <small>
+                          {t("Available times")} · {formatDate(day, lang)}:{" "}
+                          {slots(day, p.name).slice(0, 3).join(" · ") ||
+                            t("No available times. Please choose another day.")}
+                        </small>
+                      </div>
+                    </button>
+                  ))}
               </div>
-              <h3 className="form-section-title">{t("Available times")}</h3>
-              <div className="slot-grid">
-                {slots(day).map((s) => (
-                  <button
-                    key={s}
-                    aria-pressed={time === s}
-                    onClick={() => setTime(s)}
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
-              {slots(day).length === 0 && (
-                <p className="empty-state">
-                  {t("No available times. Please choose another day.")}
-                </p>
-              )}
-              {time && (
-                <div className="booking-summary">
-                  <CalendarDays size={18} />
-                  {formatDate(day, lang)}
-                  <Clock3 size={18} />
-                  {time}–{endTime(time)}
-                </div>
+              {psychologist && (
+                <>
+                  <h3 className="form-section-title">
+                    {t("Choose a day")}{" "}
+                    <small>{t("September 2026")} · Europe/Tirane</small>
+                  </h3>
+                  <div className="date-selector">
+                    {dates.map((d) => (
+                      <button
+                        key={d}
+                        onClick={() => {
+                          setDay(d);
+                          setTime("");
+                        }}
+                        aria-pressed={day === d}
+                      >
+                        <span>
+                          {new Date(d + "T12:00:00").toLocaleDateString(
+                            lang === "sq" ? "sq-AL" : "en",
+                            { weekday: "short" },
+                          )}
+                        </span>
+                        <strong>{Number(d.slice(-2))}</strong>
+                      </button>
+                    ))}
+                  </div>
+                  <h3 className="form-section-title">{t("Available times")}</h3>
+                  <div className="slot-grid">
+                    {slots(day).map((s) => (
+                      <button
+                        key={s}
+                        aria-pressed={time === s}
+                        onClick={() => setTime(s)}
+                      >
+                        {s}–{endTime(s)}
+                      </button>
+                    ))}
+                  </div>
+                  {slots(day).length === 0 && (
+                    <p className="empty-state">
+                      {t("No available times. Please choose another day.")}
+                    </p>
+                  )}
+                  {time && (
+                    <div className="booking-summary">
+                      <CalendarDays size={18} />
+                      {formatDate(day, lang)}
+                      <Clock3 size={18} />
+                      {time}–{endTime(time)}
+                    </div>
+                  )}
+                </>
               )}
               <Privacy>
                 {t("Visible only to you and your psychologist")}
@@ -244,7 +251,7 @@ export function Booking({
                 <Button variant="secondary" onClick={onClose}>
                   {t("Cancel")}
                 </Button>
-                <Button disabled={!time} onClick={book}>
+                <Button disabled={!psychologist || !time} onClick={book}>
                   {t("Confirm appointment")}
                   <ArrowRight size={16} />
                 </Button>

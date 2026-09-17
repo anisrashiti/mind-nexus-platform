@@ -24,13 +24,11 @@ import {
 import { Messages } from "./messages";
 import { Profile } from "./profile";
 import {
-  ProgramOverview,
   Eligibility,
   Contract,
   Reports,
   AdminHome,
   Organizations,
-  Assignments,
   Psychologists,
   OperationalAppointments,
   Services,
@@ -241,8 +239,6 @@ function App() {
   else if (page === "Eligibility") content = <Eligibility />;
   else if (page === "Reports") content = <Reports />;
   else if (page === "Contract") content = <Contract />;
-  else if (role === "organization")
-    content = <ProgramOverview usageOnly={page === "Program Usage"} />;
   else
     content =
       page === "Overview" ? (
@@ -251,8 +247,6 @@ function App() {
         <Organizations />
       ) : page === "Psychologists" ? (
         <Psychologists />
-      ) : page === "Assignments" ? (
-        <Assignments />
       ) : page === "Appointments" ? (
         <OperationalAppointments />
       ) : page === "Services" ? (

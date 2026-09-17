@@ -1651,7 +1651,7 @@ input[type="time"] {
 }
 .slot-grid {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
   gap: 8px;
   max-height: 210px;
   overflow-y: auto;
@@ -2237,7 +2237,7 @@ tr:hover td {
 .calendar-times {
   display: flex;
   flex-direction: column;
-  height: 768px;
+  height: 864px;
 }
 .calendar-times span {
   height: 96px;
@@ -2250,7 +2250,7 @@ tr:hover td {
 .calendar-column {
   position: relative;
   border-left: 1px solid var(--border);
-  height: 768px;
+  height: 864px;
 }
 .hour-line {
   height: 96px;
@@ -2889,64 +2889,6 @@ tr:hover td {
   font-size: 10px;
   color: #9da992;
 }
-.assignment-intro {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 18px 20px;
-  background: #eeefe8;
-  border-radius: 7px;
-  font-size: 13px;
-  color: #7c8e6b;
-  margin-bottom: 28px;
-}
-.assignment-intro p {
-  font-size: 11px;
-  margin-left: auto;
-  max-width: 350px;
-}
-.assignment-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 35px;
-  background: #fff;
-  border: 1px solid var(--border);
-  border-radius: 7px;
-  padding: 29px;
-  margin-bottom: 25px;
-}
-.assignment-person {
-  display: flex;
-  gap: 18px;
-  align-items: flex-start;
-}
-.assignment-person h2 {
-  font-size: 28px;
-}
-.assignment-person p {
-  font-size: 12px;
-  margin-top: 8px;
-}
-.assignment-prefs {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  margin-top: 15px;
-  font-size: 12px;
-  color: #829370;
-}
-.assignment-match {
-  display: grid;
-  gap: 13px;
-  min-width: 225px;
-}
-.assignment-match select {
-  font-size: 13px;
-}
-.assignment-row + .section-title {
-  margin-top: 34px;
-}
 .profile-modal {
   display: flex;
   flex-direction: column;
@@ -3212,16 +3154,6 @@ tr:hover td {
   .report-grid {
     gap: 25px;
   }
-  .assignment-row {
-    padding: 23px;
-    gap: 22px;
-  }
-  .assignment-person {
-    gap: 14px;
-  }
-  .assignment-person > .avatar {
-    display: none;
-  }
   .service-row {
     gap: 15px;
   }
@@ -3346,20 +3278,6 @@ tr:hover td {
   }
   .admin-main {
     grid-template-columns: 1fr;
-  }
-  .assignment-row {
-    align-items: flex-start;
-  }
-  .assignment-match {
-    min-width: 190px;
-  }
-  .assignment-intro {
-    align-items: flex-start;
-    flex-wrap: wrap;
-  }
-  .assignment-intro p {
-    max-width: none;
-    margin-left: 0;
   }
   .service-row {
     flex-wrap: wrap;
@@ -3769,7 +3687,7 @@ tr:hover td {
     margin-top: 6px;
   }
   .slot-grid {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .modal-actions {
     flex-wrap: wrap;
@@ -4171,22 +4089,6 @@ tr:hover td {
     padding: 18px;
     gap: 12px;
   }
-  .assignment-row {
-    flex-direction: column;
-    gap: 25px;
-  }
-  .assignment-person > .avatar {
-    display: inline-flex;
-    width: 43px;
-    height: 43px;
-    font-size: 18px;
-  }
-  .assignment-person h2 {
-    font-size: 26px;
-  }
-  .assignment-match {
-    width: 100%;
-  }
   .service-row > div {
     min-width: 70%;
   }
@@ -4395,4 +4297,106 @@ tr:hover td {
   .login .login-statement {
     padding-bottom: 12px;
   }
+}
+
+.psychologist-options {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.psychologist-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 18px;
+  text-align: left;
+  width: 100%;
+  color: inherit;
+}
+.psychologist-option[aria-pressed="true"] {
+  outline: 2px solid var(--primary, #53664e);
+  outline-offset: -2px;
+}
+.psychologist-option p {
+  margin: 5px 0;
+}
+.psychologist-option > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.psychologist-option small {
+  display: block;
+  margin-top: 8px;
+}
+.availability-layout > section {
+  min-width: 0;
+}
+.availability-timetable {
+  max-height: 570px;
+  overflow: auto;
+  margin: 16px 0;
+}
+.availability-timetable table {
+  min-width: 700px;
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+}
+.availability-timetable th,
+.availability-timetable td {
+  height: 38px;
+  padding: 3px;
+  text-align: center;
+}
+.availability-timetable thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #f5f6f1;
+  font-size: 12px;
+}
+.availability-timetable th:first-child {
+  width: 66px;
+  position: sticky;
+  left: 0;
+  background: #f5f6f1;
+}
+.availability-timetable thead th:first-child {
+  z-index: 3;
+}
+.availability-timetable tbody th {
+  font-size: 12px;
+  font-weight: 500;
+}
+.availability-timetable td button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 30px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: #f5f5f3;
+  color: #74786e;
+}
+.availability-timetable td button[aria-pressed="true"] {
+  background: #dce8d3;
+  border-color: #91a580;
+  color: #405638;
+}
+.availability-timetable td button:focus-visible {
+  outline: 2px solid var(--rust);
+  outline-offset: 1px;
+}
+.timetable-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  font-size: 13px;
+}
+.timetable-legend span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }

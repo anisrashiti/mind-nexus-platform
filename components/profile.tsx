@@ -5,15 +5,14 @@ import { useDemo } from "./demo-context";
 import { Avatar, Button, Modal, Privacy, SectionTitle, Badge } from "./ui";
 import { PageHeader } from "./patient";
 export function Profile({ settings = false }: { settings?: boolean }) {
-  const { t, role, lang, setLang, notify, profiles, setProfiles } = useDemo();
+  const { t, role, lang, setLang, notify, profiles, setProfiles, people } =
+    useDemo();
   const name =
     role === "patient"
       ? "Arta Krasniqi"
       : role === "psychologist"
         ? "Dr. Luljeta Berisha"
-        : role === "organization"
-          ? "Aurora Hospital"
-          : "Mind Nexus Team";
+        : "Mind Nexus Team";
   const saved = profiles[role!];
   const [email, setEmail] = useState(
       saved?.email ??
@@ -21,7 +20,7 @@ export function Profile({ settings = false }: { settings?: boolean }) {
           ? "arta.k@aurora.example"
           : role === "psychologist"
             ? "luljeta@mindnexus.example"
-            : "programs@aurora.example"),
+            : "programs@mindnexus.example"),
     ),
     [bio, setBio] = useState(
       saved?.bio ??
@@ -52,7 +51,7 @@ export function Profile({ settings = false }: { settings?: boolean }) {
                         ? "Clinical Psychologist"
                         : role === "patient"
                           ? "Patient / Employee"
-                          : "Program administrator",
+                          : "Mind Nexus Admin",
                     )}
                   </p>
                 </div>
@@ -93,8 +92,14 @@ export function Profile({ settings = false }: { settings?: boolean }) {
                   </label>
                   {role === "patient" && (
                     <label>
-                      {t("Assigned psychologist")}
-                      <input value="Dr. Luljeta Berisha" readOnly />
+                      {t("Chosen psychologist")}
+                      <input
+                        value={
+                          people[0].psychologist ||
+                          t("Choose a psychologist when booking")
+                        }
+                        readOnly
+                      />
                     </label>
                   )}
                 </div>
@@ -122,7 +127,8 @@ export function Profile({ settings = false }: { settings?: boolean }) {
                     </div>
                     <SectionTitle title={t("Session services")} />
                     <Badge>
-                      {t("Individual Psychological Consultation")} · 15 min
+                      {t("Individual Psychological Consultation")} ·{" "}
+                      {t("Session duration: 50 minutes")}
                     </Badge>
                   </>
                 )}
@@ -179,9 +185,9 @@ export function Profile({ settings = false }: { settings?: boolean }) {
             <h2>{t("Your privacy matters.")}</h2>
             <p>
               {t(
-                role === "organization"
+                role === "admin"
                   ? "Organization receives aggregate reporting only"
-                  : "Clinical information is accessible only within the assigned care relationship.",
+                  : "Clinical information is accessible only within the chosen care relationship.",
               )}
             </p>
             <button onClick={() => setModal("Privacy preferences")}>
@@ -230,7 +236,7 @@ export function Profile({ settings = false }: { settings?: boolean }) {
                 </Privacy>
                 <p>
                   {t(
-                    "Consultations, messages, and check-in responses remain within the assigned care relationship. Program administrators manage eligibility and aggregate usage.",
+                    "Consultations, messages, and check-in responses remain within the chosen care relationship. Program administrators manage eligibility and aggregate usage.",
                   )}
                 </p>
                 <Badge>{t("Program consent acknowledged")} · 24 Aug 2026</Badge>

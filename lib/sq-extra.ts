@@ -12,12 +12,11 @@ export const sqExtra: Record<string, string> = {
   "Your schedule is ready. Take it one session at a time.":
     "Orari juaj është gati. Përqendrohuni te një seancë në një kohë.",
   "sessions scheduled": "seanca të planifikuara",
-  "15 minutes each": "15 minuta secila",
   "In your care": "Nën kujdesin tuaj",
   "Ready for your review": "Gati për shqyrtim",
   "Your clinical workspace is private. Organizations receive aggregate reports only.":
     "Hapësira juaj klinike është private. Organizatat marrin vetëm raporte të përmbledhura.",
-  "Assigned patients only": "Vetëm pacientët e caktuar",
+  "Patients who chose you": "Pacientët që ju kanë zgjedhur",
   "Patient unavailable in your workspace.":
     "Pacienti nuk është i disponueshëm në hapësirën tuaj.",
   "Active patient": "Pacient aktiv",
@@ -39,7 +38,8 @@ export const sqExtra: Record<string, string> = {
     "Ka një pyetësor të plotësuar. Reflektimet e tjera do të tregojnë ecurinë.",
   "Self-reported reflection. Not a diagnostic tool.":
     "Reflektim personal. Nuk është mjet diagnostikues.",
-  "15-minute sessions": "Seanca 15-minutëshe",
+  "Availability in 30-minute increments":
+    "Disponueshmëri me hapa prej 30 minutash",
   "Reserve space for rest. These dates will not be available for booking.":
     "Lini hapësirë për pushim. Këto data nuk do të jenë të disponueshme për rezervim.",
   "Add time off": "Shtoni ditë pushimi",
@@ -78,25 +78,18 @@ export const sqExtra: Record<string, string> = {
     "Numri i seancave, aktiviteti mujor dhe shpërndarja sipas shërbimit.",
   sessions: "seanca",
   "Upcoming sessions": "Seancat e ardhshme",
-  "All patients have an assigned psychologist.":
-    "Të gjithë pacientët kanë një psikolog të caktuar.",
   "additional contracted psychologists": "psikologë të tjerë të kontraktuar",
-  "employees awaiting assignment": "punonjës në pritje të caktimit",
   "Suggested matches use language and availability only. No AI matching.":
     "Sugjerimet bazohen vetëm në gjuhë dhe disponueshmëri. Pa përputhje me inteligjencë artificiale.",
   "Requested support": "Mbështetja e kërkuar",
   "Workplace stress": "Stresi në punë",
-  "Your assignment queue is up to date.":
-    "Lista e caktimeve është e përditësuar.",
-  "Current assignments": "Caktimet aktuale",
-  "15-minute online consultations": "Konsulta online 15-minutëshe",
   "Operational scheduling only. Clinical notes and assessment responses are restricted to the care workspace.":
     "Vetëm planifikim operacional. Shënimet klinike dhe përgjigjet e pyetësorëve janë të kufizuara në hapësirën klinike.",
   minutes: "minuta",
   Edit: "Ndryshoni",
   "Edit service": "Ndryshoni shërbimin",
-  "Session duration is fixed at 15 minutes for this program.":
-    "Kohëzgjatja e seancës për këtë program është 15 minuta.",
+  "Each reservation lasts 1 hour: 50 minutes of consultation and 10 minutes of buffer time.":
+    "Çdo rezervim zgjat 1 orë: 50 minuta konsultë dhe 10 minuta pushim ndërmjet seancave.",
   "Audit records describe access and actions. They never contain session note content.":
     "Regjistri përshkruan qasjen dhe veprimet. Nuk përmban tekstin e shënimeve klinike.",
   "A space to come back to.": "Një hapësirë ku mund të ktheheni.",
@@ -155,8 +148,8 @@ export const sqExtra: Record<string, string> = {
     "Procesi i ardhshëm i kërkesës së të dhënave do të verifikonte identitetin tuaj para eksportit privat. Ky demonstrim nuk mbledh dhe nuk eksporton të dhëna personale.",
   "Organization receives aggregate reporting only":
     "Organizata merr vetëm raportim të përmbledhur",
-  "Consultations, messages, and check-in responses remain within the assigned care relationship. Program administrators manage eligibility and aggregate usage.":
-    "Konsultat, mesazhet dhe përgjigjet mbeten mes pacientit dhe psikologut të caktuar. Administratorët menaxhojnë të drejtën e përfitimit dhe përdorimin e përmbledhur.",
+  "Consultations, messages, and check-in responses remain within the chosen care relationship. Program administrators manage eligibility and aggregate usage.":
+    "Konsultat, mesazhet dhe përgjigjet mbeten mes pacientit dhe psikologut të zgjedhur. Administratorët e Mind Nexus menaxhojnë të drejtën e përfitimit dhe përdorimin e përmbledhur.",
   "Program consent acknowledged": "Pëlqimi për programin është pranuar",
   "Consent controls are illustrative in this prototype.":
     "Kontrollet e pëlqimit janë ilustruese në këtë prototip.",
@@ -206,9 +199,8 @@ export const sqExtra: Record<string, string> = {
   "Appointment reminders": "Kujtesat për termine",
   "New message notifications": "Njoftimet për mesazhe të reja",
   "Well-being check-in reminders": "Kujtesat për pyetësorin e mirëqenies",
-  "Clinical information is accessible only within the assigned care relationship.":
-    "Të dhënat klinike janë të qasshme vetëm brenda marrëdhënies së caktuar të kujdesit.",
-  "Program administrator": "Administrator i programit",
+  "Clinical information is accessible only within the chosen care relationship.":
+    "Të dhënat klinike janë të qasshme vetëm brenda marrëdhënies së zgjedhur të kujdesit.",
   "You are in the simulated session.": "Jeni në seancën e simuluar.",
   "Your psychologist’s room is ready.": "Dhoma e psikologut tuaj është gati.",
   "Average wait": "Pritja mesatare",
@@ -226,7 +218,6 @@ export const sqExtra: Record<string, string> = {
   "Appointment cancelled.": "Termini u anulua.",
   "Employee added.": "Punonjësi u shtua.",
   "Eligibility updated.": "E drejta e përfitimit u përditësua.",
-  "Psychologist assigned.": "Psikologu u caktua.",
   "Psychologist added.": "Psikologu u shtua.",
   "Time block removed.": "Bllokimi i orarit u hoq.",
   "End time must follow start time.":

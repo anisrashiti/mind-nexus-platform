@@ -1,4 +1,4 @@
-export type Role = "patient" | "psychologist" | "organization" | "admin";
+export type Role = "patient" | "psychologist" | "admin";
 export type Status = "Upcoming" | "Completed" | "Cancelled" | "No-show";
 export type Appointment = {
   id: string;
@@ -101,7 +101,7 @@ export const initialAppointments: Appointment[] = [
     patient: "MN-1044",
     psychologist: psychologists[0],
     date: "2026-09-14",
-    time: "10:15",
+    time: "10:30",
     service: serviceNames[2],
     status: "Upcoming",
   },
@@ -110,7 +110,7 @@ export const initialAppointments: Appointment[] = [
     patient: "MN-1045",
     psychologist: psychologists[0],
     date: "2026-09-14",
-    time: "11:00",
+    time: "13:00",
     service: serviceNames[0],
     status: "Upcoming",
   },
@@ -119,7 +119,7 @@ export const initialAppointments: Appointment[] = [
     patient: "MN-1043",
     psychologist: psychologists[0],
     date: "2026-09-14",
-    time: "15:00",
+    time: "08:30",
     service: serviceNames[3],
     status: "Upcoming",
   },
@@ -128,11 +128,11 @@ export const initialAppointments: Appointment[] = [
     patient: "MN-1044",
     psychologist: psychologists[0],
     date: "2026-09-14",
-    time: "15:30",
+    time: "16:00",
     service: serviceNames[0],
     status: "Upcoming",
   },
-  ...["2026-09-10", "2026-09-03", "2026-08-27"].map((date, i) => ({
+  ...["2026-09-10"].map((date, i) => ({
     id: `APT-239${i}`,
     patient: "MN-1042",
     psychologist: psychologists[0],
@@ -234,12 +234,12 @@ export const initialAudit = [
   {
     time: "Sep 14 · 10:03",
     actor: "Mind Nexus Admin",
-    action: "Reviewed assignment queue",
-    resource: "ASSIGNMENTS",
+    action: "Reviewed psychologist directory",
+    resource: "PSYCHOLOGISTS",
   },
   {
     time: "Sep 14 · 10:12",
-    actor: "Organization Admin",
+    actor: "Mind Nexus Admin",
     action: "Updated employee eligibility",
     resource: "ELIGIBILITY",
   },
@@ -250,7 +250,10 @@ export function formatDate(date: string, lang = "en") {
     { month: "short", day: "numeric" },
   );
 }
+export const SESSION_LIMIT = 3;
+export const BOOKING_MINUTES = 60;
+export const SESSION_MINUTES = 50;
 export function endTime(time: string) {
   const [h, m] = time.split(":").map(Number);
-  return `${String(h + Math.floor((m + 15) / 60)).padStart(2, "0")}:${String((m + 15) % 60).padStart(2, "0")}`;
+  return `${String(h + Math.floor((m + BOOKING_MINUTES) / 60)).padStart(2, "0")}:${String((m + BOOKING_MINUTES) % 60).padStart(2, "0")}`;
 }

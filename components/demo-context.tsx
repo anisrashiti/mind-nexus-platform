@@ -9,6 +9,12 @@ import {
   type Appointment,
   type Role,
 } from "@/lib/data";
+import {
+  defaultHours,
+  availableSlots,
+  allowance,
+  type Hours,
+} from "@/lib/scheduling";
 import { translate, type Language } from "@/lib/i18n";
 export type Note = {
   id: string;
@@ -22,17 +28,10 @@ export type Note = {
 export type Message = {
   id: string;
   patient: string;
+  psychologist?: string;
   from: "patient" | "psychologist";
   text: string;
   time: string;
-};
-export type Hours = {
-  day: string;
-  active: boolean;
-  start: string;
-  end: string;
-  breakStart: string;
-  breakEnd: string;
 };
 function useDemoState() {
   const [profiles, setProfiles] = useState<
@@ -105,24 +104,7 @@ function useDemoState() {
       time: "Today · 08:30",
     },
   ]);
-  const [hours, setHours] = useState<Hours[]>(
-    [
-      "Monday",
-      "Tuesday",
-      "Wednesday",
-      "Thursday",
-      "Friday",
-      "Saturday",
-      "Sunday",
-    ].map((day, i) => ({
-      day,
-      active: i < 5,
-      start: "09:00",
-      end: "16:00",
-      breakStart: "12:00",
-      breakEnd: "13:00",
-    })),
-  );
+  const [hours, setHours] = useState<Hours[]>(defaultHours);
   const [timeOff, setTimeOff] = useState<{ start: string; end: string }[]>([]),
     [blocked, setBlocked] = useState<
       { date: string; start: string; end: string }[]
@@ -163,7 +145,7 @@ function useDemoState() {
   }
   function switchRole(r: Role | null) {
     setRole(r);
-    setPage(r === "organization" || r === "admin" ? "Overview" : "Home");
+    setPage(r === "admin" ? "Overview" : "Home");
     setSelectedPatient("MN-1042");
   }
   function log(actor: string, action: string, resource: string) {
@@ -182,12 +164,82 @@ function useDemoState() {
       ...a,
     ]);
   }
+  function scheduleFor(name: string) {
+    return name === psychologists[0]
+      ? { hours, timeOff, blocked }
+      : { hours: defaultHours(), timeOff: [], blocked: [] };
+  }
+  function hasCareRelationship(
+    patient: string,
+    psychologist = psychologists[0],
+  ) {
+    return appointments.some(
+      (a) =>
+        a.patient === patient &&
+        a.psychologist === psychologist &&
+        a.status !== "Cancelled",
+    );
+  }
+  function reserveAppointment(
+    psychologist: string,
+    date: string,
+    time: string,
+    existing?: Appointment,
+  ) {
+    if (!roster.some((p) => p.active && p.name === psychologist))
+      return "Choose an available psychologist.";
+    if (
+      existing &&
+      !appointments.some(
+        (a) =>
+          a.id === existing.id &&
+          a.patient === "MN-1042" &&
+          a.status === "Upcoming",
+      )
+    )
+      return "This appointment cannot be rescheduled.";
+    if (!existing && allowance(appointments, "MN-1042").remaining === 0)
+      return "Your three-session allowance is fully used or reserved.";
+    if (
+      !availableSlots(
+        date,
+        psychologist,
+        "MN-1042",
+        scheduleFor(psychologist),
+        appointments,
+        existing?.id,
+      ).includes(time)
+    )
+      return "That time is no longer available. Please select another.";
+    const next: Appointment = {
+      id: existing?.id ?? crypto.randomUUID(),
+      patient: "MN-1042",
+      psychologist,
+      date,
+      time,
+      service:
+        existing?.service ??
+        services.find((s) => s.active)?.name ??
+        "Individual Psychological Consultation",
+      status: "Upcoming",
+    };
+    setAppointments((a) =>
+      existing ? a.map((x) => (x.id === existing.id ? next : x)) : [...a, next],
+    );
+    setPeople((p) =>
+      p.map((x) => (x.id === "MN-1042" ? { ...x, psychologist } : x)),
+    );
+    return "";
+  }
   function updateAppointment(id: string, changes: Partial<Appointment>) {
     setAppointments((a) =>
       a.map((x) => (x.id === id ? { ...x, ...changes } : x)),
     );
   }
   return {
+    hasCareRelationship,
+    scheduleFor,
+    reserveAppointment,
     profiles,
     setProfiles,
     role,

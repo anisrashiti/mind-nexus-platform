@@ -23,10 +23,17 @@ import {
   SectionTitle,
   Tabs,
 } from "./ui";
+import { allowance } from "@/lib/scheduling";
 import { Booking } from "./booking";
 import { SessionRoom } from "./session-room";
 import { TrendChart } from "./charts";
-import { formatDate, endTime, resources, type Appointment } from "@/lib/data";
+import {
+  SESSION_LIMIT,
+  formatDate,
+  endTime,
+  resources,
+  type Appointment,
+} from "@/lib/data";
 export function PageHeader({
   title,
   subtitle,
@@ -81,6 +88,9 @@ export function AppointmentRow({
           <Video size={13} />
           {t("Online")}
         </small>
+        <small>
+          {t("1-hour reserved slot")} · {t("Session duration: 50 minutes")}
+        </small>
       </div>
       <div className="appointment-actions">
         {a.status === "Upcoming" ? (
@@ -115,9 +125,7 @@ export function PatientHome() {
     .filter((x) => x.patient === "MN-1042" && x.status === "Upcoming")
     .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
   const next = upcoming[0];
-  const used = appointments.filter(
-    (x) => x.patient === "MN-1042" && x.status === "Completed",
-  ).length;
+  const { used, remaining } = allowance(appointments, "MN-1042");
   return (
     <>
       <PageHeader
@@ -155,7 +163,7 @@ export function PatientHome() {
                 <span>
                   {t(next.service)}
                   <small>
-                    {t("15 minutes")} · {t("Confidential")}
+                    {t("Session duration: 50 minutes")} · {t("Confidential")}
                   </small>
                 </span>
                 <Button onClick={() => setSession(next)}>
@@ -179,7 +187,7 @@ export function PatientHome() {
           <div className="allowance-count">
             <strong>
               {used}
-              <span> / 5</span>
+              <span> / {SESSION_LIMIT}</span>
             </strong>
             <span>
               {t("Personal sessions")}
@@ -187,7 +195,7 @@ export function PatientHome() {
             </span>
           </div>
           <div className="allowance-dots">
-            {Array.from({ length: 5 }, (_, i) => (
+            {Array.from({ length: SESSION_LIMIT }, (_, i) => (
               <span
                 key={i}
                 className={
@@ -202,7 +210,7 @@ export function PatientHome() {
           </div>
           <div className="allowance-labels">
             <span>
-              {5 - used} {t("remaining")}
+              {remaining} {t("remaining")}
             </span>
             <span>
               {upcoming.length} {t("Reserved")}

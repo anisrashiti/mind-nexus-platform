@@ -1,10 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-const roles = [
-  "Patient / Employee",
-  "Psychologist",
-  "Organization Admin",
-  "Mind Nexus Admin",
-];
+const roles = ["Patient / Employee", "Psychologist", "Mind Nexus Admin"];
 async function login(page: Page, role: string) {
   await page.goto("/");
   await page.getByRole("button", { name: role, exact: true }).click();
@@ -39,10 +34,6 @@ test("All role navigation renders, bilingual shell, notifications, privacy bound
         .first()
         .click();
       await expect(page.locator("main")).not.toBeEmpty();
-      if (role === "Organization Admin") {
-        await expect(page.locator("main")).not.toContainText("Session note");
-        await expect(page.locator("main")).not.toContainText("MN-1042");
-      }
     }
     await page.getByRole("button", { name: "SQ", exact: true }).click();
     await expect(page.locator("html")).toHaveAttribute("lang", "sq");
@@ -76,8 +67,12 @@ test("Patient cancellation, booking, reschedule, room and cross-role messaging",
     .first()
     .click();
   await page
+    .locator(".psychologist-option")
+    .filter({ hasText: "Dr. Luljeta Berisha" })
+    .click();
+  await page
     .getByRole("dialog")
-    .getByRole("button", { name: "09:00", exact: true })
+    .getByRole("button", { name: /^09:00/ })
     .click();
   await page
     .getByRole("button", { name: "Confirm appointment", exact: true })
@@ -92,7 +87,7 @@ test("Patient cancellation, booking, reschedule, room and cross-role messaging",
     .click();
   await page
     .getByRole("dialog")
-    .getByRole("button", { name: "10:30", exact: true })
+    .getByRole("button", { name: /^10:30/ })
     .click();
   await page
     .getByRole("button", { name: "Confirm appointment", exact: true })
@@ -180,18 +175,20 @@ test("Clinician patient search, draft and signed note, availability and calendar
     page.locator(".note-record").filter({ hasText: "Fictional review note" }),
   ).toContainText("Completed / Signed");
   await nav(page, "Availability");
-  await page.getByLabel("Tuesday start", { exact: true }).fill("10:00");
+  await page
+    .getByRole("button", { name: "Tuesday 09:30", exact: true })
+    .click();
   await page.getByRole("button", { name: "Save changes", exact: true }).click();
   await nav(page, "Calendar");
   await page.getByRole("button", { name: "Block time" }).click();
   await page.getByRole("button", { name: "Confirm", exact: true }).click();
   await expect(page.locator(".calendar-block")).toContainText("10:00");
   await nav(page, "Availability");
-  await expect(page.getByLabel("Tuesday start", { exact: true })).toHaveValue(
-    "10:00",
-  );
+  await expect(
+    page.getByRole("button", { name: "Tuesday 09:30", exact: true }),
+  ).toHaveAttribute("aria-pressed", "false");
 });
-test("Organization eligibility add/deactivate/import, report excludes clinical data", async ({
+test("Admin eligibility add/deactivate/import, report excludes clinical data", async ({
   page,
 }) => {
   await login(page, roles[2]);
@@ -232,22 +229,8 @@ test("Organization eligibility add/deactivate/import, report excludes clinical d
   await expect(page.locator("main")).not.toContainText("Arta");
   await expect(page.locator("main")).not.toContainText("MN-1042");
 });
-test("Admin assignment, services, search and audit", async ({ page }) => {
-  await login(page, roles[3]);
-  await nav(page, "Assignments");
-  await page
-    .locator(".assignment-row")
-    .filter({ hasText: "Elira Shala" })
-    .getByRole("button", { name: "Assign psychologist" })
-    .click();
-  await expect(
-    page.locator(".assignment-row").filter({ hasText: "Elira Shala" }),
-  ).toHaveCount(0);
-  await expect(
-    page.getByRole("row").filter({ hasText: "Elira Shala" }),
-  ).toContainText("Dr. Luljeta Berisha");
-  await nav(page, "Audit Log");
-  await expect(page.locator("table")).toContainText("Assigned psychologist");
+test("Admin services, search and audit", async ({ page }) => {
+  await login(page, roles[2]);
   await nav(page, "Services");
   await page.getByRole("button", { name: "Edit", exact: true }).first().click();
   await page
@@ -303,7 +286,7 @@ test("Mobile patient layout, messages, navigation and visual references", async 
   });
   await login(page, roles[2]);
   await page.screenshot({
-    path: "artifacts/organization-desktop.png",
+    path: "artifacts/admin-desktop.png",
     fullPage: true,
   });
   await login(page, roles[0]);

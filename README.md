@@ -13,10 +13,9 @@ Open http://localhost:3000. Choose a role under **Explore demo**; no real creden
 
 ## Demo walkthrough
 
-1. Patient: join the simulated session, book a 15-minute appointment, reschedule/cancel, send a message, and complete the wellbeing check-in.
-2. Psychologist: see the shared appointment/message/check-in, open Arta's record, save or sign a private note, and update weekly hours, breaks, time off, or calendar blocks.
-3. Organization: view aggregate reporting, download the aggregate CSV, and add/import/deactivate fictional employee eligibility.
-4. Mind Nexus Admin: assign Elira or Leon, manage the psychologist/service lists, filter operational appointments, and inspect the local audit trail.
+1. Patient: join the simulated session, choose a psychologist and book a 1-hour reservation (50-minute consultation plus 10-minute buffer), within a maximum of 3 sessions, reschedule/cancel, send a message, and complete the wellbeing check-in.
+2. Psychologist: see the shared appointment/message/check-in, open Arta's record, save or sign a private note, and toggle individual available/unavailable half-hour blocks in the weekly timetable, time off, or calendar blocks.
+3. Mind Nexus Admin: manage employee eligibility and organization contracts, export aggregate reports, manage the psychologist/service lists, filter operational appointments, and inspect the local audit trail.
 
 English and Albanian navigation, headings, forms, and actions are centralized in `lib/i18n.ts` and `lib/sq-extra.ts`. Longer fictional records and resource body copy may remain in English.
 
@@ -24,7 +23,7 @@ English and Albanian navigation, headings, forms, and actions are centralized in
 
 - All identities and records are fictional. `.example` email addresses are deliberately non-deliverable.
 - September 14, 2026 is the fixed demo date; scheduling uses Europe/Tirane time.
-- The shared React context is memory-only. Booking, notes, messages, assignments, settings, and eligibility changes reset on refresh. No backend or real authentication is implemented.
+- The shared React context is memory-only. Booking, notes, messages, settings, and eligibility changes reset on refresh. No backend or real authentication is implemented.
 - The personal pool starts with three completed sessions and one reserved session, leaving one slot available for an immediate booking demonstration. Cancellation releases a reservation.
 - Program totals and weekly clinician statistics are an illustrative historical snapshot. Detailed tables show a sample of the program rather than its full historical dataset. Booking changes affect the shared operational schedule; the historical aggregate snapshot does not change.
 - The hospital sees eligibility and aggregate usage, never clinical notes, check-in responses, consultation reasons, or individual attendance. The operations admin has scheduling access; clinical content remains in the clinician workspace.
@@ -47,4 +46,4 @@ npm test
 npm run build
 ```
 
-Playwright uses installed Google Chrome and a running local server on port 3000. The suite covers role navigation, SQ/EN switching, notifications, booking changes, messaging across roles, wellbeing, the simulated room, notes, availability, eligibility CSV import, aggregate export, assignments, services, audit activity, and mobile overflow. Static export is produced in `out/`.
+Run the production build before the tests. Playwright uses installed Google Chrome and starts its own static preview server on port 3100. The suite covers role navigation, SQ/EN switching, notifications, booking changes, messaging across roles, wellbeing, the simulated room, notes, availability, eligibility CSV import, aggregate export, services, audit activity, and mobile overflow. Static export is produced in `out/`.
