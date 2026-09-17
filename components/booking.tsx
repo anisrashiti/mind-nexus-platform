@@ -1,4 +1,5 @@
 "use client";
+import { PrivateContinuation } from "./care";
 import { availableSlots, allowance } from "@/lib/scheduling";
 import { useState } from "react";
 import { CalendarDays, Check, Clock3, Video, ArrowRight } from "lucide-react";
@@ -16,17 +17,15 @@ export function Booking({
     t,
     lang,
     appointments,
-    roster,
-    profiles,
+    primaryPsychologist,
     scheduleFor,
     reserveAppointment,
     navigate,
     log,
   } = useDemo();
-  const [psychologist, setPsychologist] = useState(
-    appointment?.psychologist ?? "",
-  );
-  const [day, setDay] = useState("2026-09-15"),
+  const psychologist = appointment?.psychologist ?? primaryPsychologist;
+  const [continuation, setContinuation] = useState(false);
+  const [day, setDay] = useState(appointment?.date ?? "2026-09-15"),
     [time, setTime] = useState(""),
     [success, setSuccess] = useState(false),
     [error, setError] = useState("");
@@ -63,18 +62,23 @@ export function Booking({
   }
   return (
     <Modal
-      title={t(
-        success
-          ? appointment
-            ? "Your session has been rescheduled."
-            : "Your session has been booked."
-          : appointment
-            ? "Reschedule"
-            : "Book a session",
-      )}
+      title={
+        t(
+          success
+            ? appointment
+              ? "Your session has been rescheduled."
+              : "Your session is booked."
+            : appointment
+              ? "Reschedule"
+              : "Book with",
+        ) + (!success && !appointment ? ` ${psychologist}` : "")
+      }
       onClose={onClose}
       wide
     >
+      {continuation && (
+        <PrivateContinuation onClose={() => setContinuation(false)} />
+      )}
       <p className="section-subtitle">
         {t("1-hour reserved slot")} · {t("Session duration: 50 minutes")}
         <br />
@@ -85,7 +89,7 @@ export function Booking({
           <span className="success-icon">
             <Check size={32} />
           </span>
-          <h2>{t("A little time, just for you.")}</h2>
+          <h2>{t("Your consultation will last approximately 50 minutes.")}</h2>
           <p>
             {formatDate(day, lang)} · {time}–{endTime(time)}
           </p>
@@ -95,7 +99,7 @@ export function Booking({
           <Button
             onClick={() => {
               onClose();
-              navigate("Appointments");
+              navigate("Sessions");
             }}
           >
             {t("View appointments")}
@@ -122,75 +126,30 @@ export function Booking({
           {!appointment && available === 0 ? (
             <div className="empty-state">
               <h3>
-                {t("Your three-session allowance is fully used or reserved.")}
+                {t(
+                  "Your employer-covered consultations are complete or reserved.",
+                )}
               </h3>
               <p>
-                {t("You can reschedule or cancel an upcoming appointment.")}
+                {t(
+                  "You can continue with your psychologist privately if you would like further support.",
+                )}
               </p>
               <Button
                 onClick={() => {
-                  navigate("Appointments");
-                  onClose();
+                  setContinuation(true);
                 }}
               >
-                {t("View appointments")}
+                {t("Continue privately")}
               </Button>
             </div>
           ) : (
             <>
-              <h3 className="form-section-title">
-                {t("Choose your psychologist")}
-              </h3>
-              <div className="psychologist-options">
-                {roster
-                  .filter((p) => p.active)
-                  .map((p) => (
-                    <button
-                      type="button"
-                      className="surface psychologist-option"
-                      key={p.name}
-                      aria-pressed={psychologist === p.name}
-                      onClick={() => {
-                        setPsychologist(p.name);
-                        setTime("");
-                        setError("");
-                      }}
-                    >
-                      <Avatar name={p.name} size="large" />
-                      <div>
-                        <h3>{p.name}</h3>
-                        <p>{t("Clinical Psychologist")}</p>
-                        <p>
-                          {t(
-                            p.name === roster[0].name
-                              ? (profiles.psychologist?.specialty ??
-                                  p.specialty)
-                              : p.specialty,
-                          )}
-                        </p>
-                        <p>{t(p.languages)}</p>
-                        <p>
-                          {t(
-                            p.name === roster[0].name &&
-                              profiles.psychologist?.bio
-                              ? profiles.psychologist.bio
-                              : "Explore support for your well-being with a psychologist you choose.",
-                          )}
-                        </p>
-                        <small>
-                          {t("Available times")} · {formatDate(day, lang)}:{" "}
-                          {slots(day, p.name).slice(0, 3).join(" · ") ||
-                            t("No available times. Please choose another day.")}
-                        </small>
-                      </div>
-                    </button>
-                  ))}
-              </div>
               {psychologist && (
                 <>
                   <h3 className="form-section-title">
                     {t("Choose a day")}{" "}
-                    <small>{t("September 2026")} · Europe/Tirane</small>
+                    <small>{t("September 2026")} · Europe/Prishtina</small>
                   </h3>
                   <div className="date-selector">
                     {dates.map((d) => (

@@ -4,11 +4,14 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   timeout: 60000,
-  webServer: {
-    command: "node tests/serve.mjs",
-    url: "http://127.0.0.1:3100",
-    reuseExistingServer: false,
-  },
+  webServer:
+    process.env.MIND_NEXUS_REUSE_PREVIEW === "1"
+      ? undefined
+      : {
+          command: "node tests/serve.mjs",
+          url: "http://127.0.0.1:3100",
+          reuseExistingServer: false,
+        },
   use: {
     baseURL: "http://127.0.0.1:3100",
     headless: true,

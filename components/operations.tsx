@@ -16,7 +16,7 @@ import { useDemo } from "./demo-context";
 import { Avatar, Badge, Button, Modal, Privacy, SectionTitle } from "./ui";
 import { PageHeader } from "./patient";
 import { UsageChart } from "./charts";
-import { formatDate, endTime, psychologists, usage } from "@/lib/data";
+import { formatDate, endTime, psychologists, usage, program } from "@/lib/data";
 export const aggregatePrivacy =
   "Individual participation and clinical information remain confidential. Organization reporting is provided in aggregate form.";
 export function downloadCsv(filename: string, rows: (string | number)[][]) {
@@ -479,7 +479,7 @@ export function Eligibility() {
   );
 }
 export function Contract() {
-  const { t } = useDemo();
+  const { t, roster, lang } = useDemo();
   return (
     <>
       <PageHeader
@@ -503,7 +503,10 @@ export function Contract() {
           </div>
           <div>
             <dt>{t("Contract period")}</dt>
-            <dd>01 Jan — 31 Dec 2026</dd>
+            <dd>
+              {formatDate(program.start, lang)} 2026 —{" "}
+              {formatDate(program.end, lang)} 2027
+            </dd>
           </div>
           <div>
             <dt>{t("Program manager")}</dt>
@@ -513,7 +516,7 @@ export function Contract() {
           </div>
           <div>
             <dt>{t("Available psychologists")}</dt>
-            <dd>4</dd>
+            <dd>{roster.filter((r) => r.active).length}</dd>
           </div>
           <div>
             <dt>{t("Payment responsibility")}</dt>
@@ -731,7 +734,16 @@ export function Organizations() {
   );
 }
 export function Psychologists() {
-  const { t, roster, setRoster, log, notify } = useDemo();
+  const {
+    t,
+    roster,
+    setRoster,
+    log,
+    notify,
+    profiles,
+    setProfiles,
+    relationships,
+  } = useDemo();
   const [modal, setModal] = useState(false),
     [selected, setSelected] = useState<string | null>(null),
     [name, setName] = useState(""),
@@ -792,7 +804,14 @@ export function Psychologists() {
                   </td>
                   <td>{r.specialty}</td>
                   <td>{t(r.languages)}</td>
-                  <td>{r.count}</td>
+                  <td>
+                    {
+                      relationships.filter(
+                        (c) =>
+                          c.psychologist === r.name && c.status === "active",
+                      ).length
+                    }
+                  </td>
                   <td>{t(r.active ? "Available" : "Unavailable")}</td>
                   <td>
                     <Badge tone={r.active ? "green" : "neutral"}>
@@ -878,13 +897,76 @@ export function Psychologists() {
       )}
       {selected && (
         <Modal title={selected} onClose={() => setSelected(null)}>
-          <div className="profile-modal">
+          <form
+            className="form-stack"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const data = new FormData(e.currentTarget);
+              const bio = String(data.get("bio") ?? "");
+              const specialty = String(data.get("specialty") ?? "");
+              setProfiles((p) => ({
+                ...p,
+                [selected]: {
+                  email: p[selected]?.email ?? "",
+                  bio,
+                  specialty,
+                  notices: p[selected]?.notices ?? [true, true, false],
+                },
+              }));
+              setRoster((r) =>
+                r.map((x) =>
+                  x.name === selected
+                    ? {
+                        ...x,
+                        specialty,
+                        languages: String(data.get("languages")),
+                      }
+                    : x,
+                ),
+              );
+              log("Mind Nexus", "Updated psychologist profile", selected);
+              notify("Saved successfully.");
+              setSelected(null);
+            }}
+          >
             <Avatar name={selected} size="large" />
-            <h2>{t("Clinical Psychologist")}</h2>
-            <p>{roster.find((r) => r.name === selected)?.specialty}</p>
-            <Badge>{t("Albanian / English")}</Badge>
-            <p>{t("Session duration: 50 minutes")}</p>
-          </div>
+            <h3>{t("Clinical Psychologist")}</h3>
+            <label>
+              {t("Professional bio")}
+              <textarea
+                name="bio"
+                required
+                defaultValue={
+                  profiles[selected]?.bio ??
+                  t(
+                    "A thoughtful space to explore work pressures, personal boundaries and the changes that matter to you.",
+                  )
+                }
+              />
+            </label>
+            <label>
+              {t("Specialties")}
+              <input
+                name="specialty"
+                required
+                defaultValue={
+                  profiles[selected]?.specialty ??
+                  roster.find((r) => r.name === selected)?.specialty
+                }
+              />
+            </label>
+            <label>
+              {t("Languages")}
+              <input
+                name="languages"
+                required
+                defaultValue={
+                  roster.find((r) => r.name === selected)?.languages
+                }
+              />
+            </label>
+            <Button>{t("Save changes")}</Button>
+          </form>
         </Modal>
       )}
     </>

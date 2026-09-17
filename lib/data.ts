@@ -8,6 +8,22 @@ export type Appointment = {
   time: string;
   service: string;
   status: Status;
+  funding?: "employer" | "private";
+};
+export type CareRelationship = {
+  id: string;
+  patient: string;
+  psychologist: string;
+  status: "active" | "historical";
+};
+export const program = {
+  name: "Employee Psychological Support Program",
+  organization: "Aurora Hospital",
+  start: "2026-04-01",
+  end: "2027-03-31",
+  purchased: 500,
+  historicalUsed: 125,
+  allowance: 3,
 };
 export const psychologists = [
   "Dr. Luljeta Berisha",
@@ -245,6 +261,24 @@ export const initialAudit = [
   },
 ];
 export function formatDate(date: string, lang = "en") {
+  if (!date || date === "—") return "—";
+  if (lang === "sq") {
+    const months = [
+      "jan",
+      "shk",
+      "mar",
+      "pri",
+      "maj",
+      "qer",
+      "korr",
+      "gush",
+      "sht",
+      "tet",
+      "nën",
+      "dhj",
+    ];
+    return `${Number(date.slice(8, 10))} ${months[Number(date.slice(5, 7)) - 1]}`;
+  }
   return new Date(date + "T12:00:00").toLocaleDateString(
     lang === "sq" ? "sq-AL" : "en-GB",
     { month: "short", day: "numeric" },

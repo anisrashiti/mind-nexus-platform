@@ -1,4 +1,5 @@
 import { sqExtra } from "./sq-extra";
+import { editorialSq } from "./editorial-i18n";
 export type Language = "en" | "sq";
 export const sq: Record<string, string> = {
   "Weekly timetable": "Orari javor",
@@ -277,4 +278,6 @@ export const sq: Record<string, string> = {
   "Operations workspace": "Hapësira operative",
 };
 export const translate = (lang: Language, text: string) =>
-  lang === "sq" ? (sq[text] ?? sqExtra[text] ?? text) : text;
+  lang === "sq"
+    ? (editorialSq[text] ?? sq[text] ?? sqExtra[text] ?? text)
+    : text;

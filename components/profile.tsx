@@ -4,16 +4,31 @@ import { LockKeyhole, ShieldCheck, Download, ChevronRight } from "lucide-react";
 import { useDemo } from "./demo-context";
 import { Avatar, Button, Modal, Privacy, SectionTitle, Badge } from "./ui";
 import { PageHeader } from "./patient";
+import { PrivacyExplanation } from "./care";
 export function Profile({ settings = false }: { settings?: boolean }) {
-  const { t, role, lang, setLang, notify, profiles, setProfiles, people } =
-    useDemo();
+  const {
+    t,
+    role,
+    activePsychologist,
+    lang,
+    setLang,
+    notify,
+    profiles,
+    setProfiles,
+    people,
+    changeRequested,
+    setChangeRequested,
+    primaryPsychologist,
+    navigate,
+  } = useDemo();
   const name =
     role === "patient"
       ? "Arta Krasniqi"
       : role === "psychologist"
-        ? "Dr. Luljeta Berisha"
+        ? activePsychologist
         : "Mind Nexus Team";
-  const saved = profiles[role!];
+  const profileKey = role === "psychologist" ? activePsychologist : role!;
+  const saved = profiles[profileKey];
   const [email, setEmail] = useState(
       saved?.email ??
         (role === "patient"
@@ -37,6 +52,30 @@ export function Profile({ settings = false }: { settings?: boolean }) {
         title={settings ? "Settings" : "Profile"}
         subtitle="Your details and preferences, in one place."
       />
+      {role === "patient" && (
+        <section className="account-program">
+          <span className="eyebrow">Mind Nexus × Aurora Hospital</span>
+          <h2>{t("Employee Psychological Support")}</h2>
+          <p>
+            {primaryPsychologist} · {t("Your psychologist")}
+          </p>
+          <button
+            className="text-button"
+            onClick={() => setModal("Change psychologist")}
+          >
+            {t("Need to change psychologist?")}
+          </button>
+        </section>
+      )}
+      {role === "admin" && (
+        <button
+          className="text-button spaced"
+          onClick={() => navigate("Audit Log")}
+        >
+          {t("Audit Log")}
+          <ChevronRight size={16} />
+        </button>
+      )}
       <div className="settings-grid">
         <section>
           {!settings && (
@@ -61,7 +100,7 @@ export function Profile({ settings = false }: { settings?: boolean }) {
                   e.preventDefault();
                   setProfiles({
                     ...profiles,
-                    [role!]: { email, bio, specialty, notices },
+                    [profileKey]: { email, bio, specialty, notices },
                   });
                   notify("Saved successfully.");
                 }}
@@ -157,7 +196,7 @@ export function Profile({ settings = false }: { settings?: boolean }) {
                   setNotices(next);
                   setProfiles({
                     ...profiles,
-                    [role!]: { email, bio, specialty, notices: next },
+                    [profileKey]: { email, bio, specialty, notices: next },
                   });
                   notify("Saved successfully.");
                 }}
@@ -210,7 +249,31 @@ export function Profile({ settings = false }: { settings?: boolean }) {
       {modal && (
         <Modal title={t(modal)} onClose={() => setModal("")}>
           <div className="form-stack">
-            {modal === "Two-factor authentication" ? (
+            {modal === "Change psychologist" ? (
+              <>
+                <p>
+                  {t(
+                    "For continuity, future consultations will remain with your chosen psychologist.",
+                  )}
+                </p>
+                <p>
+                  {t(
+                    "Mind Nexus can help you arrange an intentional change. Existing appointments and clinical records stay with their original care relationship.",
+                  )}
+                </p>
+                {changeRequested ? (
+                  <p role="status">
+                    {t(
+                      "Your request has been saved in this demo. No message was sent.",
+                    )}
+                  </p>
+                ) : (
+                  <Button onClick={() => setChangeRequested(true)}>
+                    {t("Request a change in this demo")}
+                  </Button>
+                )}
+              </>
+            ) : modal === "Two-factor authentication" ? (
               <>
                 <ShieldCheck size={30} />
                 <h2>{t("An additional layer of protection.")}</h2>
@@ -231,9 +294,7 @@ export function Profile({ settings = false }: { settings?: boolean }) {
               </>
             ) : (
               <>
-                <Privacy>
-                  {t("Organization receives aggregate reporting only")}
-                </Privacy>
+                <PrivacyExplanation />
                 <p>
                   {t(
                     "Consultations, messages, and check-in responses remain within the chosen care relationship. Program administrators manage eligibility and aggregate usage.",

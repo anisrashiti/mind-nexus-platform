@@ -48,7 +48,9 @@ export const overlaps = (
   otherEnd: string,
 ) => start < otherEnd && end > otherStart;
 export function allowance(appointments: Appointment[], patient: string) {
-  const own = appointments.filter((a) => a.patient === patient);
+  const own = appointments.filter(
+    (a) => a.patient === patient && a.funding !== "private",
+  );
   const used = own.filter(
     (a) => a.status === "Completed" || a.status === "No-show",
   ).length;

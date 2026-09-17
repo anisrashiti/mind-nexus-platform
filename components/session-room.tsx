@@ -20,7 +20,7 @@ export function SessionRoom({
   appointment: Appointment;
   onClose: () => void;
 }) {
-  const { t, navigate } = useDemo();
+  const { t, navigate, role, people } = useDemo();
   const [stage, setStage] = useState("waiting"),
     [mic, setMic] = useState(true),
     [camera, setCamera] = useState(true),
@@ -57,8 +57,20 @@ export function SessionRoom({
         </p>
         <div className="video-stage">
           <div className="video-person">
-            <Avatar name={appointment.psychologist} size="large" />
-            <h2>{appointment.psychologist}</h2>
+            <Avatar
+              name={
+                role === "psychologist"
+                  ? (people.find((p) => p.id === appointment.patient)?.name ??
+                    "")
+                  : appointment.psychologist
+              }
+              size="large"
+            />
+            <h2>
+              {role === "psychologist"
+                ? people.find((p) => p.id === appointment.patient)?.name
+                : appointment.psychologist}
+            </h2>
             <p>
               {t(
                 stage === "waiting"
@@ -70,14 +82,24 @@ export function SessionRoom({
             </p>
             {stage === "waiting" && (
               <Button onClick={() => setStage("connecting")}>
-                {t("Enter waiting room")}
+                {t("Enter session")}
                 <ArrowRight size={16} />
               </Button>
             )}
             {stage === "connecting" && <span className="spinner" />}
           </div>
           <div className="self-preview">
-            {camera ? <Avatar name="Arta Krasniqi" /> : <VideoOff size={24} />}
+            {camera ? (
+              <Avatar
+                name={
+                  role === "psychologist"
+                    ? appointment.psychologist
+                    : "Arta Krasniqi"
+                }
+              />
+            ) : (
+              <VideoOff size={24} />
+            )}
             <span>
               {t("You")} · {t("Preview")}
             </span>
@@ -134,7 +156,7 @@ export function SessionRoom({
             variant="danger"
             onClick={() => {
               onClose();
-              navigate("Appointments");
+              navigate(role === "psychologist" ? "Today" : "Sessions");
             }}
           >
             <PhoneOff size={18} />

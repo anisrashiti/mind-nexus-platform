@@ -1,17 +1,15 @@
 "use client";
+import { PsychologistCard, PrivateContinuation } from "./care";
 import { useState } from "react";
 import {
   ArrowRight,
   ArrowUpRight,
   CalendarDays,
-  MessageSquare,
-  Heart,
   Video,
   Clock3,
   BookOpen,
   Check,
   Plus,
-  Leaf,
 } from "lucide-react";
 import { useDemo } from "./demo-context";
 import {
@@ -26,7 +24,7 @@ import {
 import { allowance } from "@/lib/scheduling";
 import { Booking } from "./booking";
 import { SessionRoom } from "./session-room";
-import { TrendChart } from "./charts";
+
 import {
   SESSION_LIMIT,
   formatDate,
@@ -118,25 +116,25 @@ export function AppointmentRow({
   );
 }
 export function PatientHome() {
-  const { t, appointments, navigate } = useDemo();
-  const [booking, setBooking] = useState(false),
-    [session, setSession] = useState<Appointment | null>(null);
-  const upcoming = appointments
-    .filter((x) => x.patient === "MN-1042" && x.status === "Upcoming")
-    .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
-  const next = upcoming[0];
-  const { used, remaining } = allowance(appointments, "MN-1042");
+  const { t, lang, appointments, navigate, primaryPsychologist } = useDemo();
+  const [booking, setBooking] = useState<boolean | Appointment>(false),
+    [session, setSession] = useState<Appointment | null>(null),
+    [continuation, setContinuation] = useState(false);
+  const next = appointments
+    .filter((a) => a.patient === "MN-1042" && a.status === "Upcoming")
+    .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))[0];
+  const { used, reserved, remaining } = allowance(appointments, "MN-1042");
   return (
     <>
       <PageHeader
         title="Good afternoon, Arta."
-        subtitle="A little space for you, in the middle of everything."
+        subtitle="A private space for support, whenever you need it."
       />
-      <div className="patient-top">
+      <div className="employee-home-grid">
         <section className="next-session">
           <div className="next-session-heading">
             <span className="eyebrow">{t("Your next session")}</span>
-            <Badge>{t("Online")}</Badge>
+            <span>{t("Online")}</span>
           </div>
           {next ? (
             <>
@@ -144,7 +142,7 @@ export function PatientHome() {
                 <h2>
                   {next.date === "2026-09-14"
                     ? t("Today")
-                    : formatDate(next.date)}
+                    : formatDate(next.date, lang)}
                 </h2>
                 <span>
                   {next.time}
@@ -161,10 +159,13 @@ export function PatientHome() {
               </div>
               <div className="next-session-footer">
                 <span>
-                  {t(next.service)}
-                  <small>
-                    {t("Session duration: 50 minutes")} · {t("Confidential")}
-                  </small>
+                  {t("Approximately 50-minute consultation")}
+                  <button
+                    className="text-button"
+                    onClick={() => setBooking(next)}
+                  >
+                    {t("Reschedule")}
+                  </button>
                 </span>
                 <Button onClick={() => setSession(next)}>
                   <Video size={17} />
@@ -175,132 +176,122 @@ export function PatientHome() {
           ) : (
             <div className="empty-state">
               <h2>{t("Your support, at your pace.")}</h2>
-              <Button onClick={() => setBooking(true)}>
-                {t("Book a session")}
+              <p>{t("Make time for a conversation with your psychologist.")}</p>
+              <Button
+                onClick={() =>
+                  remaining ? setBooking(true) : setContinuation(true)
+                }
+              >
+                {t(remaining ? "Book a session" : "Continue privately")}
               </Button>
             </div>
           )}
         </section>
-        <section className="program-allowance">
-          <span className="eyebrow">{t("Your program")}</span>
-          <h2>{t("A space to come back to.")}</h2>
-          <div className="allowance-count">
-            <strong>
-              {used}
-              <span> / {SESSION_LIMIT}</span>
-            </strong>
-            <span>
-              {t("Personal sessions")}
-              <small>{t("Used")}</small>
-            </span>
+        <aside className="support-allowance">
+          <span className="eyebrow">{t("Your Mind Nexus support")}</span>
+          <div className="support-count">
+            <strong>{remaining}</strong>
+            <h2>
+              {t(
+                remaining === 1
+                  ? "consultation available"
+                  : "consultations available",
+              )}
+            </h2>
           </div>
-          <div className="allowance-dots">
+          <div className="entitlement-steps">
             {Array.from({ length: SESSION_LIMIT }, (_, i) => (
-              <span
+              <div
                 key={i}
                 className={
                   i < used
-                    ? "used"
-                    : i < used + upcoming.length
+                    ? "completed"
+                    : i < used + reserved
                       ? "reserved"
-                      : ""
+                      : "available"
                 }
-              />
+              >
+                <span>{String(i + 1).padStart(2, "0")}</span>
+                <small>
+                  {t(
+                    i < used
+                      ? "Completed / used"
+                      : i < used + reserved
+                        ? "Reserved"
+                        : "Available",
+                  )}
+                </small>
+              </div>
             ))}
           </div>
-          <div className="allowance-labels">
-            <span>
-              {remaining} {t("remaining")}
-            </span>
-            <span>
-              {upcoming.length} {t("Reserved")}
-            </span>
-          </div>
-          <p>
-            {t("Provided by Aurora Hospital.")}
-            <br />
-            {t("No payment needed from you.")}
-          </p>
-        </section>
+          <p>{t("Provided by Aurora Hospital · No payment required")}</p>
+          {remaining === 0 && (
+            <button
+              className="text-button"
+              onClick={() => setContinuation(true)}
+            >
+              {t("Continue privately")}
+              <ArrowUpRight size={16} />
+            </button>
+          )}
+        </aside>
       </div>
-      <div className="quick-actions">
-        <button onClick={() => setBooking(true)}>
-          <span className="quick-icon">
-            <CalendarDays size={22} />
-          </span>
-          <span>
-            <strong>{t("Book a session")}</strong>
-            <small>{t("Make time for yourself")}</small>
-          </span>
-          <ArrowUpRight size={18} />
-        </button>
-        <button onClick={() => navigate("Messages")}>
-          <span className="quick-icon">
-            <MessageSquare size={22} />
-          </span>
-          <span>
-            <strong>{t("Message psychologist")}</strong>
-            <small>{t("Continue the conversation")}</small>
-          </span>
-          <ArrowUpRight size={18} />
-        </button>
-        <button onClick={() => navigate("Well-being")}>
-          <span className="quick-icon">
-            <Heart size={22} />
-          </span>
-          <span>
-            <strong>{t("Complete check-in")}</strong>
-            <small>{t("Pause and reflect")}</small>
-          </span>
-          <ArrowUpRight size={18} />
-        </button>
-      </div>
-      <div className="patient-lower">
+      <div className="employee-secondary">
         <section>
           <SectionTitle
-            title={t("Upcoming appointments")}
-            action={t("View all")}
-            onAction={() => navigate("Appointments")}
+            title={t("Your psychologist")}
+            action={t("Message")}
+            onAction={() => navigate("Messages")}
           />
-          {upcoming.slice(0, 2).map((a) => (
-            <button
-              className="simple-session"
-              onClick={() => navigate("Appointments")}
-              key={a.id}
-            >
-              <div className="date-tile">
-                <span>SEP</span>
-                <strong>{Number(a.date.slice(-2))}</strong>
-              </div>
-              <div>
-                <h3>{t(a.service)}</h3>
-                <p>
-                  {a.time}–{endTime(a.time)} · {t("Online")}
-                </p>
-              </div>
-              <ArrowUpRight size={17} />
-            </button>
-          ))}
+          <PsychologistCard name={primaryPsychologist} compact />
         </section>
-        <section className="resource-feature">
-          <span className="eyebrow">{t("A moment for your mind")}</span>
-          <Leaf size={30} strokeWidth={1} />
-          <h2>{t("Small steps. Meaningful change.")}</h2>
-          <p>{t("Practical perspectives for your working day and beyond.")}</p>
+        <section className="employee-editorial">
+          <span className="eyebrow">{t("From Mind Nexus")}</span>
+          <h2>{t("Understanding workplace stress")}</h2>
+          <p>
+            {t(
+              "Notice what the working day asks of you, and what helps you feel more settled.",
+            )}
+          </p>
           <button className="text-button" onClick={() => navigate("Resources")}>
-            {t("Explore resources")}
+            {t("Read resource")}
             <ArrowRight size={16} />
           </button>
+          <div className="reflection-invite">
+            <h3>{t("A short reflection before your next session")}</h3>
+            <p>{t("Optional · visible to you and your psychologist")}</p>
+            <button
+              className="text-button"
+              onClick={() => navigate("Reflection")}
+            >
+              {t("Take a moment to reflect")}
+              <ArrowRight size={16} />
+            </button>
+          </div>
         </section>
       </div>
-      <Privacy>
-        {t(
-          "Your consultations and personal information are confidential and are not shared with your employer.",
+      <div className="employee-bottom">
+        <p>
+          {t("Your employer does not see your individual use of the service.")}
+        </p>
+        {next && remaining > 0 && (
+          <button className="text-button" onClick={() => setBooking(true)}>
+            {t("Book another session")}
+            <ArrowRight size={16} />
+          </button>
         )}
-      </Privacy>
-      {booking && <Booking onClose={() => setBooking(false)} />}{" "}
+      </div>
+      {booking && (
+        <Booking
+          appointment={typeof booking === "object" ? booking : undefined}
+          onClose={() => setBooking(false)}
+        />
+      )}{" "}
       {session && (
         <SessionRoom appointment={session} onClose={() => setSession(null)} />
+      )}{" "}
+      {continuation && (
+        <PrivateContinuation onClose={() => setContinuation(false)} />
       )}
     </>
   );
@@ -321,7 +312,7 @@ export function PatientAppointments() {
   return (
     <>
       <PageHeader
-        title="Appointments"
+        title="Sessions"
         subtitle="Your time, thoughtfully set aside."
       >
         <Button onClick={() => setBooking(true)}>
@@ -399,104 +390,92 @@ export function PatientAppointments() {
   );
 }
 export const questions = [
-  "I have felt calm and relaxed.",
-  "I have had energy for daily activities.",
-  "I have felt rested when waking up.",
-  "I have felt connected to people around me.",
-  "I have been able to make time for myself.",
+  "What has felt demanding recently?",
+  "What has helped you feel more settled?",
+  "How have work and rest fitted together?",
+  "Is there something you would like to discuss?",
+  "What would you like to make room for this week?",
 ];
 export function Wellbeing() {
-  const { t, checkin, setCheckin } = useDemo();
-  const [answers, setAnswers] = useState(checkin ?? [3, 3, 3, 3, 3]),
-    [editing, setEditing] = useState(!checkin);
+  const { t, reflections, setReflections, primaryPsychologist } = useDemo();
+  const saved = reflections.find(
+    (r) => r.patient === "MN-1042" && r.psychologist === primaryPsychologist,
+  );
+  const [answers, setAnswers] = useState(
+      saved?.answers ?? ["", "", "", "", ""],
+    ),
+    [editing, setEditing] = useState(!saved);
   return (
     <>
       <PageHeader
-        title="Well-being"
-        subtitle="A small pause. A better understanding of yourself."
+        title="Reflection"
+        subtitle="A short reflection before your next session"
       />
-      <div className="wellbeing-grid">
-        <section className="surface checkin-form">
-          {editing ? (
-            <>
-              <span className="eyebrow">{t("Weekly reflection")} · 2 MIN</span>
-              <h2>{t("How have you been feeling this week?")}</h2>
-              <p>{t("A moment to reflect. This is not a diagnostic tool.")}</p>
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  setCheckin(answers);
-                  setEditing(false);
-                }}
-              >
-                {questions.map((q, i) => (
-                  <div className="question" key={q}>
-                    <label htmlFor={`q-${i}`}>
-                      <span>0{i + 1}</span>
-                      {t(q)}
-                      <strong>{answers[i]}/5</strong>
-                    </label>
-                    <input
-                      id={`q-${i}`}
-                      type="range"
-                      min="1"
-                      max="5"
-                      value={answers[i]}
-                      onChange={(e) =>
-                        setAnswers(
-                          answers.map((v, j) =>
-                            j === i ? Number(e.target.value) : v,
-                          ),
-                        )
-                      }
-                    />
-                    <div>
-                      <span>{t("Never")}</span>
-                      <span>{t("Always")}</span>
-                    </div>
-                  </div>
-                ))}
-                <Button className="full">
-                  {t("Submit check-in")}
-                  <ArrowRight size={16} />
-                </Button>
-              </form>
-            </>
-          ) : (
-            <div className="success-state">
-              <span className="success-icon">
-                <Check size={28} />
-              </span>
-              <h2>{t("Check-in completed.")}</h2>
-              <p>{t("Thank you for making a little space for yourself.")}</p>
-              <Badge>
-                {Math.round((checkin!.reduce((a, b) => a + b, 0) / 25) * 100)} /
-                100
-              </Badge>
-              <Button variant="secondary" onClick={() => setEditing(true)}>
-                {t("View responses")}
-              </Button>
-            </div>
+      <section className="reflection-form surface">
+        <span className="eyebrow">
+          {t("Optional · visible to you and your psychologist")}
+        </span>
+        <h2>{t("A little space to put things into words.")}</h2>
+        <p>
+          {t(
+            "These prompts are not a diagnosis or a score. Share only what you want your psychologist to read.",
           )}
-        </section>
-        <section className="wellbeing-history">
-          <SectionTitle title={t("Well-being trend")} />
-          <p>{t("Your weekly reflections over time.")}</p>
-          <TrendChart />
-          <div className="insight">
-            <Heart size={20} />
-            <div>
-              <h3>{t("Every week is different.")}</h3>
-              <p>
-                {t(
-                  "There is no right score. Your check-in is a starting point for a conversation.",
-                )}
-              </p>
-            </div>
+        </p>
+        {editing ? (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              setReflections((r) => [
+                ...r.filter(
+                  (x) =>
+                    !(
+                      x.patient === "MN-1042" &&
+                      x.psychologist === primaryPsychologist
+                    ),
+                ),
+                {
+                  patient: "MN-1042",
+                  psychologist: primaryPsychologist,
+                  answers,
+                },
+              ]);
+              setEditing(false);
+            }}
+          >
+            {questions.map((q, i) => (
+              <label key={q}>
+                <span>{t(q)}</span>
+                <textarea
+                  maxLength={2000}
+                  rows={2}
+                  value={answers[i]}
+                  onChange={(e) =>
+                    setAnswers((a) =>
+                      a.map((v, j) => (i === j ? e.target.value : v)),
+                    )
+                  }
+                />
+              </label>
+            ))}
+            <Button disabled={!answers.some((a) => a.trim())}>
+              {t("Share reflection with my psychologist")}
+            </Button>
+          </form>
+        ) : (
+          <div className="success-state">
+            <Check size={28} />
+            <h2>{t("Your reflection has been saved.")}</h2>
+            <p>
+              {t(
+                "Visible to you and your psychologist. Your employer cannot see your responses.",
+              )}
+            </p>
+            <Button variant="secondary" onClick={() => setEditing(true)}>
+              {t("View responses")}
+            </Button>
           </div>
-          <Privacy>{t("Visible only to you and your psychologist")}</Privacy>
-        </section>
-      </div>
+        )}
+      </section>
     </>
   );
 }
@@ -539,6 +518,11 @@ export function Resources() {
               <div>
                 <span className="eyebrow">{t(r.category)}</span>
                 <h2>{lang === "sq" ? r.sq : r.title}</h2>
+                <p>
+                  {t(
+                    "A short perspective to bring into your next conversation.",
+                  )}
+                </p>
               </div>
               <span>
                 {r.minutes} min {t("read")}
@@ -555,7 +539,7 @@ export function Resources() {
         >
           <article className="article-content">
             <span className="eyebrow">MIND NEXUS · {article.minutes} MIN</span>
-            <p>{article.body}</p>
+            <p>{t(article.body)}</p>
             <div className="article-reflection">
               <h2>{t("A question to take with you")}</h2>
               <p>

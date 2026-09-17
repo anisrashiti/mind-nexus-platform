@@ -1,7 +1,8 @@
 "use client";
 import * as Dialog from "@radix-ui/react-dialog";
 import { X, ArrowUpRight, LockKeyhole } from "lucide-react";
-import type { ReactNode, ButtonHTMLAttributes } from "react";
+import { useRef, type ReactNode, type ButtonHTMLAttributes } from "react";
+import { useDemo } from "./demo-context";
 export function Button({
   children,
   variant = "primary",
@@ -56,14 +57,28 @@ export function Modal({
   onClose: () => void;
   wide?: boolean;
 }) {
+  const { t } = useDemo();
+  const previousFocus = useRef(
+    typeof document !== "undefined"
+      ? (document.activeElement as HTMLElement)
+      : null,
+  );
   return (
     <Dialog.Root open onOpenChange={(open) => !open && onClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="modal-overlay" />
-        <Dialog.Content className={`modal ${wide ? "wide" : ""}`}>
+        <Dialog.Content
+          className={`modal ${wide ? "wide" : ""}`}
+          onCloseAutoFocus={(event) => {
+            if (previousFocus.current?.isConnected) {
+              event.preventDefault();
+              previousFocus.current.focus();
+            }
+          }}
+        >
           <div className="modal-heading">
             <Dialog.Title>{title}</Dialog.Title>
-            <Dialog.Close className="icon-button" aria-label="Close">
+            <Dialog.Close className="icon-button" aria-label={t("Close")}>
               <X size={20} />
             </Dialog.Close>
           </div>
@@ -123,6 +138,28 @@ export function Tabs({
           key={x}
           role="tab"
           aria-selected={value === x}
+          tabIndex={value === x ? 0 : -1}
+          onKeyDown={(event) => {
+            if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key))
+              return;
+            event.preventDefault();
+            const index = items.indexOf(x);
+            const next =
+              event.key === "Home"
+                ? 0
+                : event.key === "End"
+                  ? items.length - 1
+                  : (index +
+                      (event.key === "ArrowRight" ? 1 : -1) +
+                      items.length) %
+                    items.length;
+            onChange(items[next]);
+            (
+              event.currentTarget.parentElement?.children[
+                next
+              ] as HTMLButtonElement
+            )?.focus();
+          }}
           onClick={() => onChange(x)}
         >
           {x}

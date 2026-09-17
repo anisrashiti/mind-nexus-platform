@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./editorial.css";
 @font-face {
   font-family: Karla;
   font-weight: 200 800;
@@ -19,14 +20,34 @@
   --color-rust: #852c14;
 }
 :root {
-  --cream: #f8f6f2;
-  --paper: #fff;
-  --ink: #282a28;
-  --muted: #777b75;
-  --rust: #852c14;
-  --border: #e6e7e1;
-  --sage: #eaf0e8;
-  --green: #4d6551;
+  --bg-primary: #f8f6f2;
+  --bg-surface: #fffefa;
+  --bg-white: #fff;
+  --bg-warm: #eeeae1;
+  --bg-soft-sage: #eaf0e8;
+  --text-primary: #282a28;
+  --text-secondary: #6d716a;
+  --text-tertiary: #8b8f87;
+  --brand-rust: #852c14;
+  --brand-hover: #6e2411;
+  --brand-soft: #f2eae3;
+  --support-green: #4d6551;
+  --muted-green: #869a7e;
+  --success-bg: #eaf0e7;
+  --success-text: #546d50;
+  --border-default: #e6e7e1;
+  --border-strong: #d8dad3;
+  --warning-bg: #f4ebdc;
+  --warning-text: #765b2a;
+  --danger: #9f382a;
+  --cream: var(--bg-primary);
+  --paper: var(--bg-surface);
+  --ink: var(--text-primary);
+  --muted: var(--text-secondary);
+  --rust: var(--brand-rust);
+  --border: var(--border-default);
+  --sage: var(--bg-soft-sage);
+  --green: var(--support-green);
   --font-sans: var(--font-karla);
   --font-serif: var(--font-newsreader);
 }

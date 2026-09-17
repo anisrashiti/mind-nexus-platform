@@ -2,37 +2,37 @@
 import { useState, useEffect, useRef } from "react";
 import { Send, LockKeyhole, Info, Search, ArrowLeft } from "lucide-react";
 import { useDemo } from "./demo-context";
-import { Avatar, Button, Badge } from "./ui";
+import { Avatar, Button, Modal } from "./ui";
 import { PageHeader } from "./patient";
 export function Messages() {
   const {
+    activePsychologist,
     t,
     role,
     people,
     messages,
     setMessages,
     selectedPatient,
-    appointments,
+    primaryPsychologist,
     hasCareRelationship,
   } = useDemo();
-  const doctors = Array.from(
-    new Set(
-      appointments
-        .filter((a) => a.patient === "MN-1042" && a.status !== "Cancelled")
-        .map((a) => a.psychologist),
-    ),
-  );
+  const doctors = primaryPsychologist ? [primaryPsychologist] : [];
+  const [urgent, setUrgent] = useState(false);
   const [doctor, setDoctor] = useState(doctors[0] ?? "");
   const [patient, setPatient] = useState(
-      role === "patient" ? "MN-1042" : selectedPatient,
+      role === "patient"
+        ? "MN-1042"
+        : hasCareRelationship(selectedPatient)
+          ? selectedPatient
+          : (people.find((p) => hasCareRelationship(p.id))?.id ?? ""),
     ),
     [draft, setDraft] = useState(""),
     [search, setSearch] = useState(""),
     [mobileConversation, setMobileConversation] = useState(false);
   const carePatients = people.filter((p) => hasCareRelationship(p.id));
-  const person = people.find((p) => p.id === patient)!;
-  const clinician = role === "patient" ? doctor : "Dr. Luljeta Berisha";
-  const name = role === "patient" ? doctor : person.name;
+  const person = people.find((p) => p.id === patient);
+  const clinician = role === "patient" ? doctor : activePsychologist;
+  const name = role === "patient" ? doctor : (person?.name ?? "");
   const list = messages.filter(
     (m) =>
       m.patient === patient &&
@@ -47,7 +47,7 @@ export function Messages() {
   }, [patient, list.length]);
   function send(e: React.FormEvent) {
     e.preventDefault();
-    if (!draft.trim()) return;
+    if (!draft.trim() || !hasCareRelationship(patient, clinician)) return;
     setMessages((m) => [
       ...m,
       {
@@ -66,8 +66,26 @@ export function Messages() {
     ]);
     setDraft("");
   }
+  if (!person || !hasCareRelationship(patient, clinician))
+    return (
+      <p className="empty-state">{t("No care relationship available.")}</p>
+    );
   return (
     <>
+      {urgent && (
+        <Modal title={t("Need urgent help?")} onClose={() => setUrgent(false)}>
+          <p>
+            {t(
+              "Mind Nexus messaging is not an emergency service. In an emergency, contact local emergency services or seek immediate in-person help.",
+            )}
+          </p>
+          <p className="spaced">
+            {t(
+              "Local support contacts will be confirmed before launch. This prototype does not provide an emergency response.",
+            )}
+          </p>
+        </Modal>
+      )}
       <PageHeader
         title="Messages"
         subtitle="A private space to stay connected."
@@ -159,11 +177,14 @@ export function Messages() {
                 {role === "patient" ? t("Clinical Psychologist") : person.id}
               </p>
             </div>
-            <Badge tone="neutral">
-              <LockKeyhole size={12} />
-              {t("Confidential")}
-            </Badge>
           </header>
+          <div className="async-notice">
+            <p>{t("For non-urgent communication between sessions.")}</p>
+            <small>{t("Your psychologist may not respond immediately.")}</small>
+            <button className="text-button" onClick={() => setUrgent(true)}>
+              {t("Need urgent help?")}
+            </button>
+          </div>
           <div ref={history} className="message-history">
             <div className="conversation-date">10–14 September 2026</div>
             {list.map((m) => (
@@ -171,11 +192,8 @@ export function Messages() {
                 className={`message ${m.from === role ? "outgoing" : "incoming"}`}
                 key={m.id}
               >
-                <div>{m.text}</div>
-                <small>
-                  {m.time}
-                  {m.from === role ? " · ✓✓" : ""}
-                </small>
+                <div>{t(m.text)}</div>
+                <small>{m.time}</small>
               </div>
             ))}
             {!list.length && (

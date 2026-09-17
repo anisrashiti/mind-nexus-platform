@@ -1,5 +1,11 @@
 "use client";
 import { useState, useEffect } from "react";
+import { Onboarding, PrivacyExplanation } from "./care";
+import {
+  ProgramWorkspace,
+  ProgramDashboard,
+  AggregateReports,
+} from "./program";
 import Logo from "./logo";
 import { Button, Modal } from "./ui";
 import { DemoProvider, useDemo } from "./demo-context";
@@ -26,9 +32,6 @@ import { Profile } from "./profile";
 import {
   Eligibility,
   Contract,
-  Reports,
-  AdminHome,
-  Organizations,
   Psychologists,
   OperationalAppointments,
   Services,
@@ -46,7 +49,7 @@ function Login() {
             MIND NEXUS · {t("WORKPLACE WELL-BEING")}
           </span>
           <h1>
-            {t("Your space for better well-being.").replace(
+            {t("Private support. Built around you.").replace(
               "well-being",
               "well‑being",
             )}
@@ -63,7 +66,7 @@ function Login() {
         </div>
         <div className="login-foot">
           <ShieldCheck size={18} />
-          {t("Confidential")} · {t("Personal workspace")}
+          {t("Employee Psychological Support")} · Aurora Hospital
         </div>
       </section>
       <section className="login-form">
@@ -123,7 +126,7 @@ function Login() {
             </Button>
           </form>
           <div className="demo-divider">
-            <span>{t("Explore demo")}</span>
+            <span>{t("Prototype access")}</span>
           </div>
           <div className="demo-options">
             {(Object.keys(roleNames) as Role[]).map((r) => (
@@ -158,7 +161,7 @@ function Login() {
   );
 }
 function App() {
-  const { role, page, lang, navigate } = useDemo();
+  const { role, page, lang, navigate, onboarded } = useDemo();
   useEffect(() => {
     document.documentElement.lang = lang;
   }, [lang]);
@@ -198,8 +201,16 @@ function App() {
     return () => lifecycle.abort();
   }, [role, navigate]);
   if (!role) return <Login />;
+  if (role === "patient" && !onboarded) return <Onboarding />;
   let content: React.ReactNode = null;
-  if (page === "Profile" || page === "Settings")
+  if (page === "Privacy")
+    content = (
+      <>
+        <h1>{lang === "sq" ? "Privatësia juaj" : "Your privacy"}</h1>
+        <PrivacyExplanation />
+      </>
+    );
+  else if (page === "Profile" || page === "Settings")
     content = (
       <Profile key={`${role}-${page}`} settings={page === "Settings"} />
     );
@@ -212,18 +223,18 @@ function App() {
     content =
       page === "Home" ? (
         <PatientHome />
-      ) : page === "Appointments" ? (
+      ) : page === "Sessions" ? (
         <PatientAppointments />
-      ) : page === "Well-being" ? (
+      ) : page === "Reflection" ? (
         <Wellbeing />
       ) : (
         <Resources />
       );
   else if (role === "psychologist")
     content =
-      page === "Home" ? (
+      page === "Today" ? (
         <ClinicianHome />
-      ) : page === "Patients" ? (
+      ) : page === "Clients" ? (
         <Patients />
       ) : page === "Patient detail" ? (
         <PatientDetail />
@@ -236,18 +247,18 @@ function App() {
       ) : (
         <Availability />
       );
-  else if (page === "Eligibility") content = <Eligibility />;
-  else if (page === "Reports") content = <Reports />;
+  else if (page === "Employees") content = <Eligibility />;
+  else if (page === "Reports") content = <AggregateReports />;
   else if (page === "Contract") content = <Contract />;
   else
     content =
       page === "Overview" ? (
-        <AdminHome />
-      ) : page === "Organizations" ? (
-        <Organizations />
+        <ProgramDashboard />
+      ) : page === "Program" ? (
+        <ProgramWorkspace />
       ) : page === "Psychologists" ? (
         <Psychologists />
-      ) : page === "Appointments" ? (
+      ) : page === "Sessions" ? (
         <OperationalAppointments />
       ) : page === "Services" ? (
         <Services />

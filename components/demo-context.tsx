@@ -8,13 +8,17 @@ import {
   psychologists,
   type Appointment,
   type Role,
+  type CareRelationship,
+  program,
 } from "@/lib/data";
 import {
   defaultHours,
   availableSlots,
   allowance,
   type Hours,
+  type Schedule,
 } from "@/lib/scheduling";
+import { useDemoStorage } from "@/lib/use-demo-storage";
 import { translate, type Language } from "@/lib/i18n";
 export type Note = {
   id: string;
@@ -24,6 +28,7 @@ export type Note = {
   follow: boolean;
   interval: string;
   complete: boolean;
+  psychologist?: string;
 };
 export type Message = {
   id: string;
@@ -34,20 +39,83 @@ export type Message = {
   time: string;
 };
 function useDemoState() {
-  const [profiles, setProfiles] = useState<
+  const [profiles, setProfiles] = useDemoStorage<
     Record<
       string,
       { email: string; bio: string; specialty: string; notices: boolean[] }
     >
-  >({});
+  >("profiles", {});
+  const [activePsychologist, setActivePsychologist] = useState(
+    psychologists[0],
+  );
   const [role, setRole] = useState<Role | null>(null),
     [lang, setLang] = useState<Language>("en"),
     [page, setPage] = useState("Home");
-  const [appointments, setAppointments] = useState(initialAppointments),
-    [employees, setEmployees] = useState(initialEmployees),
-    [people, setPeople] = useState(patients),
-    [audit, setAudit] = useState(initialAudit);
-  const [notes, setNotes] = useState<Note[]>([
+  const [onboarded, setOnboarded] = useDemoStorage("onboarded", false);
+  const [relationships, setRelationships] = useDemoStorage<CareRelationship[]>(
+    "relationships",
+    patients
+      .filter((p) => p.psychologist)
+      .map((p) => ({
+        id: `care-${p.id}`,
+        patient: p.id,
+        psychologist: p.psychologist,
+        status: "active",
+      })),
+  );
+  const [changeRequested, setChangeRequested] = useDemoStorage(
+    "changeRequested",
+    false,
+  );
+  const [privateRequested, setPrivateRequested] = useDemoStorage(
+    "privateRequested",
+    false,
+  );
+  const [reflections, setReflections] = useDemoStorage<
+    { patient: string; psychologist: string; answers: string[] }[]
+  >("reflections", []);
+  const primaryPsychologist =
+    relationships.find((r) => r.patient === "MN-1042" && r.status === "active")
+      ?.psychologist ?? "";
+  function choosePsychologist(name: string) {
+    if (onboarded || !roster.some((r) => r.name === name && r.active)) return;
+    setRelationships((r) => [
+      ...r.filter((x) => x.patient !== "MN-1042"),
+      {
+        id: "care-MN-1042",
+        patient: "MN-1042",
+        psychologist: name,
+        status: "active",
+      },
+    ]);
+    // Seeded Arta records represent the selected fictional relationship.
+    setAppointments((a) =>
+      a.map((x) =>
+        x.patient === "MN-1042" ? { ...x, psychologist: name } : x,
+      ),
+    );
+    setMessages((m) =>
+      m.map((x) =>
+        x.patient === "MN-1042" ? { ...x, psychologist: name } : x,
+      ),
+    );
+    setNotes((n) =>
+      n.map((x) =>
+        x.patient === "MN-1042" ? { ...x, psychologist: name } : x,
+      ),
+    );
+    setPeople((p) =>
+      p.map((x) => (x.id === "MN-1042" ? { ...x, psychologist: name } : x)),
+    );
+  }
+  const [appointments, setAppointments] = useDemoStorage(
+      "appointments",
+      initialAppointments,
+    ),
+    [employees, setEmployees] = useDemoStorage("employees", initialEmployees),
+    [people, setPeople] = useDemoStorage("people", patients),
+    [audit, setAudit] = useDemoStorage("audit", initialAudit);
+  const [notes, setNotes] = useDemoStorage<Note[]>("notes", [
     {
       id: "NOTE-201",
       patient: "MN-1042",
@@ -67,7 +135,7 @@ function useDemoState() {
       complete: false,
     },
   ]);
-  const [messages, setMessages] = useState<Message[]>([
+  const [messages, setMessages] = useDemoStorage<Message[]>("messages", [
     {
       id: "m1",
       patient: "MN-1042",
@@ -104,15 +172,35 @@ function useDemoState() {
       time: "Today · 08:30",
     },
   ]);
-  const [hours, setHours] = useState<Hours[]>(defaultHours);
-  const [timeOff, setTimeOff] = useState<{ start: string; end: string }[]>([]),
-    [blocked, setBlocked] = useState<
-      { date: string; start: string; end: string }[]
-    >([]);
+  const [schedules, setSchedules] = useDemoStorage<Record<string, Schedule>>(
+    "schedules",
+    {},
+  );
+  const currentSchedule = scheduleFor(activePsychologist);
+  const { hours, timeOff, blocked } = currentSchedule;
+  function setHours(next: Hours[]) {
+    setSchedules((s) => ({
+      ...s,
+      [activePsychologist]: { ...currentSchedule, hours: next },
+    }));
+  }
+  function setTimeOff(next: Schedule["timeOff"]) {
+    setSchedules((s) => ({
+      ...s,
+      [activePsychologist]: { ...currentSchedule, timeOff: next },
+    }));
+  }
+  function setBlocked(next: Schedule["blocked"]) {
+    setSchedules((s) => ({
+      ...s,
+      [activePsychologist]: { ...currentSchedule, blocked: next },
+    }));
+  }
   const [checkin, setCheckin] = useState<number[] | null>(null),
     [toast, setToast] = useState(""),
     [selectedPatient, setSelectedPatient] = useState("MN-1042");
-  const [roster, setRoster] = useState(
+  const [roster, setRoster] = useDemoStorage(
+    "roster",
     psychologists.map((name, i) => ({
       name,
       active: true,
@@ -144,8 +232,12 @@ function useDemoState() {
     window.scrollTo({ top: 0, behavior: "instant" });
   }
   function switchRole(r: Role | null) {
+    if (r === "psychologist")
+      setActivePsychologist(primaryPsychologist || psychologists[0]);
     setRole(r);
-    setPage(r === "admin" ? "Overview" : "Home");
+    setPage(
+      r === "admin" ? "Overview" : r === "psychologist" ? "Today" : "Home",
+    );
     setSelectedPatient("MN-1042");
   }
   function log(actor: string, action: string, resource: string) {
@@ -165,19 +257,16 @@ function useDemoState() {
     ]);
   }
   function scheduleFor(name: string) {
-    return name === psychologists[0]
-      ? { hours, timeOff, blocked }
-      : { hours: defaultHours(), timeOff: [], blocked: [] };
+    return (
+      schedules[name] ?? { hours: defaultHours(), timeOff: [], blocked: [] }
+    );
   }
   function hasCareRelationship(
     patient: string,
-    psychologist = psychologists[0],
+    psychologist = activePsychologist,
   ) {
-    return appointments.some(
-      (a) =>
-        a.patient === patient &&
-        a.psychologist === psychologist &&
-        a.status !== "Cancelled",
+    return relationships.some(
+      (r) => r.patient === patient && r.psychologist === psychologist,
     );
   }
   function reserveAppointment(
@@ -186,6 +275,10 @@ function useDemoState() {
     time: string,
     existing?: Appointment,
   ) {
+    if (psychologist !== primaryPsychologist)
+      return "Bookings stay with your chosen psychologist.";
+    if (!employees.some((e) => e.id === "MN-1042" && e.active))
+      return "Your eligibility needs review. Contact Mind Nexus.";
     if (!roster.some((p) => p.active && p.name === psychologist))
       return "Choose an available psychologist.";
     if (
@@ -200,6 +293,8 @@ function useDemoState() {
       return "This appointment cannot be rescheduled.";
     if (!existing && allowance(appointments, "MN-1042").remaining === 0)
       return "Your three-session allowance is fully used or reserved.";
+    if (!existing && poolRemaining === 0)
+      return "The program pool is fully reserved. Contact Mind Nexus.";
     if (
       !availableSlots(
         date,
@@ -222,6 +317,7 @@ function useDemoState() {
         services.find((s) => s.active)?.name ??
         "Individual Psychological Consultation",
       status: "Upcoming",
+      funding: existing?.funding ?? "employer",
     };
     setAppointments((a) =>
       existing ? a.map((x) => (x.id === existing.id ? next : x)) : [...a, next],
@@ -236,7 +332,37 @@ function useDemoState() {
       a.map((x) => (x.id === id ? { ...x, ...changes } : x)),
     );
   }
+  const employerAppointments = appointments.filter(
+    (a) => a.funding !== "private",
+  );
+  const poolUsed =
+    program.historicalUsed +
+    employerAppointments.filter(
+      (a) => a.status === "Completed" || a.status === "No-show",
+    ).length;
+  const poolReserved = employerAppointments.filter(
+    (a) => a.status === "Upcoming",
+  ).length;
+  const poolRemaining = Math.max(
+    0,
+    program.purchased - poolUsed - poolReserved,
+  );
   return {
+    activePsychologist,
+    onboarded,
+    setOnboarded,
+    relationships,
+    primaryPsychologist,
+    choosePsychologist,
+    changeRequested,
+    setChangeRequested,
+    privateRequested,
+    setPrivateRequested,
+    reflections,
+    setReflections,
+    poolUsed,
+    poolReserved,
+    poolRemaining,
     hasCareRelationship,
     scheduleFor,
     reserveAppointment,

@@ -1,13 +1,12 @@
 "use client";
+import { SessionRoom } from "./session-room";
 import { useState, useRef, useEffect } from "react";
 import {
   ArrowRight,
   ArrowUpRight,
   CalendarDays,
-  Video,
   FileText,
   MessageSquare,
-  ClipboardCheck,
   Plus,
   Search,
   ChevronLeft,
@@ -26,192 +25,149 @@ import {
   Tabs,
 } from "./ui";
 import { PageHeader, questions } from "./patient";
-import { TrendChart } from "./charts";
+
 import { isHalfHour, halfHourTimes } from "@/lib/scheduling";
 import { formatDate, endTime, type Appointment } from "@/lib/data";
 export function ClinicianHome() {
-  const { t, navigate, appointments, people, notes, setSelectedPatient } =
-    useDemo();
+  const {
+    activePsychologist,
+    t,
+    appointments,
+    people,
+    notes,
+    messages,
+    navigate,
+    setSelectedPatient,
+    hasCareRelationship,
+  } = useDemo();
+  const [session, setSession] = useState<Appointment | null>(null);
   const today = appointments
     .filter(
       (a) =>
         a.date === "2026-09-14" &&
         a.status === "Upcoming" &&
-        a.psychologist === "Dr. Luljeta Berisha",
+        a.psychologist === activePsychologist,
     )
     .sort((a, b) => a.time.localeCompare(b.time));
-  function open(a: Appointment) {
-    setSelectedPatient(a.patient);
+  const pending = notes.filter(
+    (n) =>
+      !n.complete &&
+      (n.psychologist ?? "Dr. Luljeta Berisha") === activePsychologist,
+  );
+  const awaiting = people.filter(
+    (p) =>
+      hasCareRelationship(p.id) &&
+      messages
+        .filter(
+          (m) =>
+            m.patient === p.id &&
+            (m.psychologist ?? "Dr. Luljeta Berisha") === activePsychologist,
+        )
+        .at(-1)?.from === "patient",
+  );
+  function record(id: string) {
+    setSelectedPatient(id);
     navigate("Patient detail");
   }
   return (
     <>
-      <PageHeader
-        title="Good morning, Luljeta."
-        subtitle="Here’s your day at a glance."
-      >
-        <Button variant="secondary" onClick={() => navigate("Calendar")}>
-          <CalendarDays size={17} />
-          {t("View calendar")}
-        </Button>
-      </PageHeader>
-      <div className="clinician-summary">
-        <div className="summary-intro">
-          <span className="summary-mark">◍</span>
-          <div>
-            <h2>{t("Room for meaningful conversations.")}</h2>
-            <p>{t("Your schedule is ready. Take it one session at a time.")}</p>
-          </div>
-        </div>
-        <div className="summary-date">
-          <strong>14</strong>
-          <span>
-            {t("Monday")}
-            <small>September 2026</small>
-          </span>
-        </div>
-      </div>
-      <div className="metrics clinician-metrics">
-        {[
-          ["Today’s sessions", today.length, "Session duration: 50 minutes"],
-          ["Active patients", 31, "In your care"],
-          [
-            "Pending notes",
-            notes.filter((n) => !n.complete).length,
-            "Ready for your review",
-          ],
-        ].map(([label, value, sub]) => (
-          <div key={label}>
-            <span className="eyebrow">{t(String(label))}</span>
-            <strong>{value}</strong>
-            <p>{t(String(sub))}</p>
-          </div>
-        ))}
-      </div>
+      <PageHeader title="Today" subtitle={activePsychologist} />
       <div className="clinical-main">
         <section className="today-agenda">
-          <SectionTitle
-            title={t("Today")}
-            action={t("View calendar")}
-            onAction={() => navigate("Calendar")}
-          />
-          <div className="agenda-caption">
-            <span>
-              {today.length} {t("sessions scheduled")}
-            </span>
-            <span>Europe/Tirane</span>
+          <div className="section-title">
+            <h2>{t("Your schedule")}</h2>
+            <span>Europe/Prishtina</span>
           </div>
-          {today.slice(0, 4).map((a, i) => {
-            const p = people.find((p) => p.id === a.patient)!;
-            return (
-              <div className={`agenda-row ${i === 0 ? "next" : ""}`} key={a.id}>
-                <div className="agenda-time">
-                  <strong>{a.time}</strong>
-                  <small>{endTime(a.time)}</small>
-                </div>
-                <div className="agenda-track">
-                  <i />
-                </div>
-                <Avatar name={p.name} />
-                <div className="agenda-person">
-                  <h3>
-                    {p.name.split(" ")[0]} {p.name.split(" ")[1][0]}.
-                  </h3>
-                  <p>{t(a.service)}</p>
-                  <span>
-                    <Video size={12} />
-                    {t("Online")} · {t("Session duration: 50 minutes")}
-                  </span>
-                </div>
-                <Button
-                  variant={i === 0 ? "primary" : "secondary"}
-                  onClick={() => open(a)}
-                >
-                  {t("Open")}
-                  <ArrowUpRight size={14} />
-                </Button>
+          {today.map((a, i) => (
+            <div className={"agenda-row " + (i === 0 ? "next" : "")} key={a.id}>
+              <div className="agenda-time">
+                <strong>{a.time}</strong>
+                <small>{endTime(a.time)}</small>
               </div>
-            );
-          })}
+              <Avatar
+                name={people.find((p) => p.id === a.patient)?.name ?? ""}
+              />
+              <div className="agenda-person">
+                <h3>{people.find((p) => p.id === a.patient)?.name}</h3>
+                <p>{t("Online · 50-minute consultation")}</p>
+                <button
+                  className="text-button"
+                  onClick={() => record(a.patient)}
+                >
+                  {t("Client record")}
+                </button>
+              </div>
+              <Button
+                variant={i === 0 ? "primary" : "secondary"}
+                onClick={() => setSession(a)}
+              >
+                {t("Join session")}
+              </Button>
+            </div>
+          ))}
+          {!today.length && (
+            <p className="empty-state">{t("No sessions scheduled today.")}</p>
+          )}
         </section>
         <aside className="attention-column">
           <SectionTitle title={t("Requires attention")} />
           <div className="attention-list">
-            {[
-              [
-                FileText,
-                `${notes.filter((n) => !n.complete).length} session notes need completion`,
-                "Patients",
-              ],
-              [MessageSquare, "3 new messages", "Messages"],
-              [ClipboardCheck, "1 assessment ready for review", "Assessments"],
-            ].map(([Icon, label, target]) => {
-              const I = Icon as typeof FileText;
-              return (
-                <button
-                  key={String(label)}
-                  onClick={() => navigate(String(target))}
-                >
-                  <span className="attention-icon">
-                    <I size={18} />
-                  </span>
-                  <span>{t(String(label))}</span>
-                  <ChevronRight size={16} />
-                </button>
-              );
-            })}
+            {pending.map((n) => (
+              <button key={n.id} onClick={() => record(n.patient)}>
+                <FileText size={18} />
+                <span>
+                  <strong>
+                    {people.find((p) => p.id === n.patient)?.name}
+                  </strong>
+                  <small>{t("Unfinished session note")}</small>
+                </span>
+                <ChevronRight size={16} />
+              </button>
+            ))}
+            {awaiting.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => {
+                  setSelectedPatient(p.id);
+                  navigate("Messages");
+                }}
+              >
+                <MessageSquare size={18} />
+                <span>
+                  <strong>{p.name}</strong>
+                  <small>{t("Message awaiting reply")}</small>
+                </span>
+                <ChevronRight size={16} />
+              </button>
+            ))}
           </div>
-          <div className="weekly-summary">
-            <span className="eyebrow">{t("This week")}</span>
-            <h2>{t("Your week in perspective")}</h2>
-            <div
-              className="week-bars"
-              aria-label="Completed sessions by weekday"
-            >
-              {[5, 6, 4, 5, 4].map((n, i) => (
-                <div key={i}>
-                  <span style={{ height: n * 12 }} />
-                  <small>{["M", "T", "W", "T", "F"][i]}</small>
-                </div>
-              ))}
-            </div>
-            <div className="weekly-counts">
-              <span>
-                <strong>24</strong>
-                {t("Completed")}
-              </span>
-              <span>
-                <strong>2</strong>
-                {t("Cancelled")}
-              </span>
-              <span>
-                <strong>1</strong>
-                {t("No-show")}
-              </span>
-            </div>
+          <div className="clinical-links">
             <button
               className="text-button"
-              onClick={() => navigate("Sessions")}
+              onClick={() => navigate("Calendar")}
             >
-              {t("View sessions")}
-              <ArrowRight size={15} />
+              {t("View calendar")}
+              <ArrowUpRight size={16} />
             </button>
-          </div>
-          <div className="quiet-note">
-            <LockKeyhole size={18} />
-            <p>
-              {t(
-                "Your clinical workspace is private. Organizations receive aggregate reports only.",
-              )}
-            </p>
+            <button
+              className="text-button"
+              onClick={() => navigate("Availability")}
+            >
+              {t("Manage availability")}
+              <ArrowUpRight size={16} />
+            </button>
           </div>
         </aside>
       </div>
+      {session && (
+        <SessionRoom appointment={session} onClose={() => setSession(null)} />
+      )}
     </>
   );
 }
 export function Patients() {
   const {
+    activePsychologist,
     t,
     people,
     appointments,
@@ -229,7 +185,7 @@ export function Patients() {
   return (
     <>
       <PageHeader
-        title="Patients"
+        title="Clients"
         subtitle="Continuity of care, one conversation at a time."
       />
       <div className="table-toolbar">
@@ -248,16 +204,11 @@ export function Patients() {
         <table>
           <thead>
             <tr>
-              {[
-                "Patient",
-                "Patient ID",
-                "Last session",
-                "Next session",
-                "Status",
-                "",
-              ].map((s) => (
-                <th key={s}>{t(s)}</th>
-              ))}
+              {["Patient", "Last session", "Next session", "Status", ""].map(
+                (s) => (
+                  <th key={s}>{t(s)}</th>
+                ),
+              )}
             </tr>
           </thead>
           <tbody>
@@ -269,14 +220,13 @@ export function Patients() {
                     onClick={() => {
                       setSelectedPatient(p.id);
                       navigate("Patient detail");
-                      log("Dr. Luljeta Berisha", "Viewed patient", p.id);
+                      log(activePsychologist, "Viewed patient", p.id);
                     }}
                   >
                     <Avatar name={p.name} />
                     <strong>{p.name}</strong>
                   </button>
                 </td>
-                <td>{p.id}</td>
                 <td>{formatDate(p.last)}</td>
                 <td>
                   {formatDate(
@@ -317,13 +267,14 @@ export function Patients() {
 }
 export function PatientDetail() {
   const {
+    activePsychologist,
     t,
     people,
     selectedPatient,
     appointments,
     notes,
     navigate,
-    checkin,
+    reflections,
     hasCareRelationship,
   } = useDemo();
   const p = people.find(
@@ -338,7 +289,7 @@ export function PatientDetail() {
       </div>
     );
   const appts = appointments.filter(
-    (a) => a.patient === p.id && a.psychologist === "Dr. Luljeta Berisha",
+    (a) => a.patient === p.id && a.psychologist === activePsychologist,
   );
   const next = appts
     .filter((a) => a.status === "Upcoming")
@@ -347,10 +298,10 @@ export function PatientDetail() {
     <>
       <button
         className="text-button back-link"
-        onClick={() => navigate("Patients")}
+        onClick={() => navigate("Clients")}
       >
         <ChevronLeft size={16} />
-        {t("Patients")}
+        {t("Clients")}
       </button>
       <div className="patient-profile-header">
         <Avatar name={p.name} size="large" />
@@ -383,13 +334,13 @@ export function PatientDetail() {
           "Overview",
           "Sessions",
           "Notes",
-          "Assessments",
+          "Reflections",
           "Documents",
         ].map(t)}
         value={t(tab)}
         onChange={(s) =>
           setTab(
-            ["Overview", "Sessions", "Notes", "Assessments", "Documents"].find(
+            ["Overview", "Sessions", "Notes", "Reflections", "Documents"].find(
               (x) => t(x) === s,
             )!,
           )
@@ -430,17 +381,20 @@ export function PatientDetail() {
               {t("Online")}
             </p>
             <hr />
-            <span className="eyebrow">{t("Recent well-being result")}</span>
-            <strong className="score">
-              {p.id === "MN-1042" && checkin
-                ? Math.round((checkin.reduce((a, b) => a + b, 0) / 25) * 100)
-                : 72}
-              <small>/ 100</small>
-            </strong>
-            <p>12 Sep · {t("Self-reported reflection")}</p>
+            <h3>{t("Optional reflections")}</h3>
+            <p>
+              {t(
+                reflections.some(
+                  (r) =>
+                    r.patient === p.id && r.psychologist === activePsychologist,
+                )
+                  ? "A reflection is available to read."
+                  : "No reflection shared yet.",
+              )}
+            </p>
             <button
               className="text-button"
-              onClick={() => setTab("Assessments")}
+              onClick={() => setTab("Reflections")}
             >
               {t("View responses")}
               <ArrowRight size={16} />
@@ -478,7 +432,12 @@ export function PatientDetail() {
         <>
           <Privacy>{t("Confidential clinical record")}</Privacy>
           {notes
-            .filter((n) => n.patient === p.id)
+            .filter(
+              (n) =>
+                n.patient === p.id &&
+                (n.psychologist ?? "Dr. Luljeta Berisha") ===
+                  activePsychologist,
+            )
             .map((n) => (
               <div className="note-record surface" key={n.id}>
                 <div>
@@ -502,7 +461,7 @@ export function PatientDetail() {
           )}
         </>
       )}
-      {tab === "Assessments" && <AssessmentContent patientId={p.id} />}{" "}
+      {tab === "Reflections" && <AssessmentContent patientId={p.id} />}{" "}
       {tab === "Documents" && (
         <div className="record-row surface">
           <FileText size={22} />
@@ -535,7 +494,16 @@ export function NoteEditor({
   patientId: string;
   onClose: () => void;
 }) {
-  const { t, appointments, people, notes, setNotes, notify, log } = useDemo();
+  const {
+    activePsychologist,
+    t,
+    appointments,
+    people,
+    notes,
+    setNotes,
+    notify,
+    log,
+  } = useDemo();
   const [text, setText] = useState(note?.text ?? ""),
     [follow, setFollow] = useState(note?.follow ?? false),
     [interval, setInterval] = useState(note?.interval ?? "1 week"),
@@ -543,7 +511,7 @@ export function NoteEditor({
       note?.session ??
         appointments.find(
           (a) =>
-            a.patient === patientId && a.psychologist === "Dr. Luljeta Berisha",
+            a.patient === patientId && a.psychologist === activePsychologist,
         )?.id ??
         "",
     );
@@ -553,6 +521,7 @@ export function NoteEditor({
     const n: Note = {
       id: note?.id ?? `NOTE-${Date.now()}`,
       patient: patientId,
+      psychologist: activePsychologist,
       session,
       text,
       follow,
@@ -565,7 +534,7 @@ export function NoteEditor({
         : [...notes, n],
     );
     log(
-      "Dr. Luljeta Berisha",
+      activePsychologist,
       complete ? "Completed session note" : "Saved note draft",
       n.id,
     );
@@ -598,7 +567,11 @@ export function NoteEditor({
               onChange={(e) => setSession(e.target.value)}
             >
               {appointments
-                .filter((a) => a.patient === patientId)
+                .filter(
+                  (a) =>
+                    a.patient === patientId &&
+                    a.psychologist === activePsychologist,
+                )
                 .map((a) => (
                   <option key={a.id} value={a.id}>
                     {formatDate(a.date)} · {a.time} · {a.status}
@@ -674,49 +647,29 @@ export function AssessmentContent({
 }: {
   patientId?: string;
 }) {
-  const { t, checkin } = useDemo();
-  const [show, setShow] = useState(false);
-  const answers =
-    patientId === "MN-1042" && checkin ? checkin : [4, 3, 3, 4, 4];
+  const { activePsychologist, t, reflections } = useDemo();
+  const reflection = reflections.find(
+    (r) => r.patient === patientId && r.psychologist === activePsychologist,
+  );
   return (
-    <>
-      <div className="record-row surface">
-        <ClipboardCheck size={22} />
-        <div>
-          <h3>{t("Well-being Check-in")}</h3>
-          <p>
-            {t("Completed")} ·{" "}
-            {patientId === "MN-1042" && checkin ? "14" : "12"} Sep ·{" "}
-            {t("Score")}:{" "}
-            {Math.round((answers.reduce((a, b) => a + b, 0) / 25) * 100)}
-          </p>
-        </div>
-        <Button variant="secondary" onClick={() => setShow(true)}>
-          {t("View responses")}
-        </Button>
-      </div>
-      <div className="surface chart-surface">
-        <SectionTitle title={t("Well-being trend")} />
-        {patientId === "MN-1042" ? (
-          <TrendChart />
-        ) : (
-          <p className="empty-state">
-            {t("One check-in available. More reflections will build a trend.")}
-          </p>
+    <section className="reflection-record surface">
+      <h2>{t("Reflections")}</h2>
+      <p>
+        {t(
+          "Optional responses shared by your client. No clinical score is calculated.",
         )}
-        <p>{t("Self-reported reflection. Not a diagnostic tool.")}</p>
-      </div>
-      {show && (
-        <Modal title={t("Well-being Check-in")} onClose={() => setShow(false)}>
-          {questions.map((q, i) => (
-            <div className="response-row" key={q}>
-              <span>{t(q)}</span>
-              <Badge>{answers[i]} / 5</Badge>
-            </div>
-          ))}
-        </Modal>
+      </p>
+      {reflection ? (
+        questions.map((q, i) => (
+          <div className="response-row" key={q}>
+            <h3>{t(q)}</h3>
+            <p>{reflection.answers[i] || t("Not answered")}</p>
+          </div>
+        ))
+      ) : (
+        <p className="empty-state">{t("No reflection shared yet.")}</p>
       )}
-    </>
+    </section>
   );
 }
 export function Assessments() {
@@ -725,7 +678,7 @@ export function Assessments() {
   return (
     <>
       <PageHeader
-        title="Assessments"
+        title="Reflections"
         subtitle="Reflections that support the conversation."
       />
       <label className="filter-label">
@@ -745,7 +698,16 @@ export function Assessments() {
   );
 }
 export function Availability() {
-  const { t, hours, setHours, timeOff, setTimeOff, notify, log } = useDemo();
+  const {
+    activePsychologist,
+    t,
+    hours,
+    setHours,
+    timeOff,
+    setTimeOff,
+    notify,
+    log,
+  } = useDemo();
   const timetable = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (timetable.current) timetable.current.scrollTop = 16 * 38;
@@ -771,11 +733,7 @@ export function Availability() {
   function save() {
     setHours(draft);
     notify("Saved successfully.");
-    log(
-      "Dr. Luljeta Berisha",
-      "Updated recurring availability",
-      "AVAILABILITY",
-    );
+    log(activePsychologist, "Updated recurring availability", "AVAILABILITY");
   }
   return (
     <>
@@ -799,7 +757,7 @@ export function Availability() {
               <Check size={14} /> {t("Available")}
             </span>
             <span>{t("Unavailable")}</span>
-            <span>Europe/Tirane</span>
+            <span>Europe/Prishtina</span>
           </div>
           <div
             className="surface availability-timetable"
@@ -935,10 +893,17 @@ export function Availability() {
   );
 }
 export function ClinicianSessions() {
-  const { t, appointments, people, navigate, setSelectedPatient } = useDemo();
+  const {
+    activePsychologist,
+    t,
+    appointments,
+    people,
+    navigate,
+    setSelectedPatient,
+  } = useDemo();
   const [tab, setTab] = useState("Today");
   const list = appointments
-    .filter((a) => a.psychologist === "Dr. Luljeta Berisha")
+    .filter((a) => a.psychologist === activePsychologist)
     .filter((a) =>
       tab === "Today"
         ? a.date === "2026-09-14" && a.status === "Upcoming"
@@ -1017,6 +982,7 @@ export function ClinicianSessions() {
 }
 export function ClinicianCalendar() {
   const {
+    activePsychologist,
     t,
     appointments,
     people,
@@ -1025,6 +991,8 @@ export function ClinicianCalendar() {
     blocked,
     setBlocked,
     notify,
+    hours,
+    timeOff,
   } = useDemo();
   const [view, setView] = useState("Week"),
     [offset, setOffset] = useState(0),
@@ -1084,6 +1052,16 @@ export function ClinicianCalendar() {
           onChange={(s) => setView(s === t("Week") ? "Week" : "Day")}
         />
       </div>
+      <div className="calendar-legend">
+        <span>
+          <i />
+          {t("Available")}
+        </span>
+        <span>
+          <i />
+          {t("Reserved")}
+        </span>
+      </div>
       <div className="calendar-scroll">
         <div
           className="calendar-grid"
@@ -1112,6 +1090,22 @@ export function ClinicianCalendar() {
           </div>
           {days.map((d) => (
             <div className="calendar-column" key={d}>
+              {!timeOff.some((x) => d >= x.start && d <= x.end) &&
+                hours[(new Date(d + "T12:00:00").getDay() + 6) % 7].slots
+                  .filter((time) => time >= "08:00" && time < "17:00")
+                  .map((time) => (
+                    <div
+                      key={time}
+                      className="calendar-available"
+                      aria-hidden="true"
+                      style={{
+                        top:
+                          (Number(time.slice(0, 2)) - 8) * 96 +
+                          Number(time.slice(3)) * 1.6,
+                        height: 47,
+                      }}
+                    />
+                  ))}
               {Array.from({ length: 9 }, (_, i) => (
                 <div className="hour-line" key={i} />
               ))}
@@ -1120,7 +1114,7 @@ export function ClinicianCalendar() {
                   (a) =>
                     a.date === d &&
                     a.status === "Upcoming" &&
-                    a.psychologist === "Dr. Luljeta Berisha",
+                    a.psychologist === activePsychologist,
                 )
                 .map((a) => {
                   const [h, m] = a.time.split(":").map(Number);
@@ -1214,7 +1208,7 @@ export function ClinicianCalendar() {
                   (a) =>
                     a.date === date &&
                     a.status === "Upcoming" &&
-                    a.psychologist === "Dr. Luljeta Berisha" &&
+                    a.psychologist === activePsychologist &&
                     a.time < end &&
                     endTime(a.time) > start,
                 )

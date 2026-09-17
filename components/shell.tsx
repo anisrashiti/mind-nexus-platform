@@ -35,9 +35,13 @@ import { useDemo } from "./demo-context";
 import type { Role } from "@/lib/data";
 const icons: Record<string, typeof Home> = {
   Home,
+  Today: Home,
+  Clients: Users,
+  Program: Building2,
+  Employees: Users,
   Appointments: CalendarDays,
   Messages: MessageSquare,
-  "Well-being": Heart,
+  Reflection: Heart,
   Resources: BookOpen,
   Profile: UserRound,
   Calendar,
@@ -57,42 +61,21 @@ const icons: Record<string, typeof Home> = {
   "Audit Log": History,
 };
 export const navigation: Record<Role, string[]> = {
-  patient: [
-    "Home",
-    "Appointments",
-    "Messages",
-    "Well-being",
-    "Resources",
-    "Profile",
-  ],
-  psychologist: [
-    "Home",
-    "Calendar",
-    "Sessions",
-    "Patients",
-    "Messages",
-    "Assessments",
-    "Availability",
-    "Profile",
-    "Settings",
-  ],
+  patient: ["Home", "Sessions", "Messages", "Resources"],
+  psychologist: ["Today", "Calendar", "Clients", "Messages", "Availability"],
   admin: [
     "Overview",
-    "Organizations",
+    "Program",
+    "Employees",
     "Psychologists",
-    "Eligibility",
-    "Appointments",
-    "Services",
+    "Sessions",
     "Reports",
-    "Contract",
-    "Audit Log",
-    "Settings",
   ],
 };
 export const roleNames: Record<Role, string> = {
-  patient: "Patient / Employee",
+  patient: "Employee",
   psychologist: "Psychologist",
-  admin: "Mind Nexus Admin",
+  admin: "Mind Nexus",
 };
 export function Shell({ children }: { children: React.ReactNode }) {
   const {
@@ -104,8 +87,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
     setLang,
     t,
     toast,
-    selectedPatient,
+    activePsychologist,
   } = useDemo();
+  const [account, setAccount] = useState(false);
   const [mobile, setMobile] = useState(false),
     [notifications, setNotifications] = useState(false),
     [read, setRead] = useState<Record<string, boolean>>({}),
@@ -116,14 +100,14 @@ export function Shell({ children }: { children: React.ReactNode }) {
     role === "patient"
       ? "Arta Krasniqi"
       : role === "psychologist"
-        ? "Dr. Luljeta Berisha"
+        ? activePsychologist
         : "Mind Nexus Team";
   const alerts =
     role === "patient"
       ? [
           "Appointment confirmed",
           "New message from your psychologist",
-          "Well-being check-in available",
+          "Optional reflection available",
         ]
       : role === "psychologist"
         ? [
@@ -146,12 +130,12 @@ export function Shell({ children }: { children: React.ReactNode }) {
     setSearch("");
   };
   return (
-    <div className="app-shell">
+    <div className={`app-shell role-${role}`}>
       <aside className={`sidebar ${mobile ? "is-open" : ""}`}>
         <div className="sidebar-brand">
           <Logo />
           <button
-            aria-label="Close navigation"
+            aria-label={t("Close navigation")}
             className="mobile-only icon-button"
             onClick={() => setMobile(false)}
           >
@@ -164,25 +148,21 @@ export function Shell({ children }: { children: React.ReactNode }) {
             const Icon = icons[item];
             return (
               <button
-                className={`${page === item || (page === "Patient detail" && item === "Patients") ? "selected" : ""} ${role === "psychologist" && i === 6 ? "nav-divider" : ""}`}
+                className={`${page === item || (page === "Patient detail" && item === "Clients") ? "selected" : ""} ${role === "psychologist" && i === 6 ? "nav-divider" : ""}`}
                 key={item}
                 aria-label={t(item)}
                 onClick={() => go(item)}
               >
                 <Icon size={19} strokeWidth={1.6} />
                 <span>{t(item)}</span>
-                {item === "Messages" && <small>3</small>}
               </button>
             );
           })}
         </nav>
         <div className="sidebar-bottom">
-          <div className="confidential-side">
-            <LockKeyhole size={16} />
-            <div>
-              <strong>{t("Confidential by design")}</strong>
-              <p>{t("A space built around trust.")}</p>
-            </div>
+          <div className="sidebar-service">
+            <span className="eyebrow">Mind Nexus</span>
+            <p>{t("Employee Psychological Support")}</p>
           </div>
           <button className="signout" onClick={() => switchRole(null)}>
             <LogOut size={17} />
@@ -208,7 +188,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         <header className="topbar">
           <button
             className="icon-button mobile-only"
-            aria-label="Open navigation"
+            aria-label={t("Open navigation")}
             onClick={() => setMobile(true)}
           >
             <Menu size={21} />
@@ -217,7 +197,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             {t(workspace)}
             <span>/</span>
             <strong>
-              {page === "Patient detail" ? selectedPatient : t(page)}
+              {page === "Patient detail" ? t("Client record") : t(page)}
             </strong>
           </div>
           <div className="topbar-actions">
@@ -296,18 +276,18 @@ export function Shell({ children }: { children: React.ReactNode }) {
                             go(
                               role === "patient"
                                 ? i === 0
-                                  ? "Appointments"
+                                  ? "Sessions"
                                   : i === 1
                                     ? "Messages"
-                                    : "Well-being"
+                                    : "Reflection"
                                 : role === "psychologist"
                                   ? i === 0
                                     ? "Sessions"
                                     : i === 1
                                       ? "Messages"
-                                      : "Patients"
+                                      : "Clients"
                                   : i === 0
-                                    ? "Eligibility"
+                                    ? "Employees"
                                     : "Reports",
                             );
                             setNotifications(false);
@@ -333,7 +313,13 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 </>
               )}
             </div>
-            <Avatar name={name} size="small" />
+            <button
+              className="icon-button account-trigger"
+              aria-label={t("Account")}
+              onClick={() => setAccount(true)}
+            >
+              <Avatar name={name} size="small" />
+            </button>
           </div>
         </header>
         <main className="main-content" key={`${role}-${page}`}>
@@ -353,7 +339,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
       </div>
       {role === "patient" && (
         <nav className="bottom-nav">
-          {navigation.patient.slice(0, 5).map((x) => {
+          {navigation.patient.map((x) => {
             const Icon = icons[x];
             return (
               <button
@@ -367,6 +353,44 @@ export function Shell({ children }: { children: React.ReactNode }) {
             );
           })}
         </nav>
+      )}
+      {account && (
+        <Modal title={t("Account")} onClose={() => setAccount(false)}>
+          <div className="account-menu">
+            {[
+              "Profile",
+              "Language",
+              "Notifications",
+              "Privacy",
+              ...(role === "admin" ? ["Audit Log"] : []),
+              "Settings",
+            ].map((item) => (
+              <button
+                key={item}
+                onClick={() => {
+                  go(
+                    item === "Language" || item === "Notifications"
+                      ? "Settings"
+                      : item,
+                  );
+                  setAccount(false);
+                }}
+              >
+                {t(item)}
+                <ArrowUpRight size={16} />
+              </button>
+            ))}
+            <button
+              onClick={() => {
+                switchRole(null);
+                setAccount(false);
+              }}
+            >
+              {t("Sign out")}
+              <LogOut size={16} />
+            </button>
+          </div>
+        </Modal>
       )}
       {switcher && (
         <Modal
