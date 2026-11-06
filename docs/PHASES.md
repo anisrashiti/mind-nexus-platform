@@ -41,3 +41,10 @@
 3. HR receives a restricted DTO and no per-person usage; totals below five are null before rendering. Deactivation privately cancels future bookings, refunds once and revokes access.
 4. Validation: lint, typecheck and privacy/invite parser unit tests passed before commit; cross-role browser assertions are included in final QA.
 5. TODO(question): No additional product behavior was inferred; the sessions-used reporting definition from phase 4 remains pending client confirmation.
+
+## Phase 6
+1. Added participant-only video routes, strict join window, lazy locked room creation, encrypted host/employee URLs and a development placeholder.
+2. Verified current Whereby docs; disabled recording/transcription and implemented signed, role-bound, idempotent attendance webhooks.
+3. Added authenticated five-minute reminder/attendance crons, idempotent no-show/refund handling and room cleanup; fixed a timestamp-serialization issue found by browser login QA.
+4. Validation: lint, typecheck, raw-signature/replay/role tests and existing tests passed before commit; live Whereby/Resend calls remain unverified without service keys.
+5. TODO(question): Whereby rejects the spec's externalId format and does not terminate at endDate; documented the signed metadata adaptation and app/cron end enforcement in VIDEO.md.

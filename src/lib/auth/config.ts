@@ -1,5 +1,5 @@
 import 'server-only';
-import NextAuth from 'next-auth';
+import NextAuth,{AuthError} from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import {verify} from 'argon2';
 import {and,eq,gt} from 'drizzle-orm';
@@ -44,5 +44,5 @@ export const {handlers,auth,signIn,signOut}=NextAuth({
   }},
   callbacks:{async jwt({token,user}){if(user?.id){token.sub=user.id;delete token.jti;}return token;},async session({session,token}){if(session.user)session.user.id=token.sub!;return session;}},
   events:{async signOut(message){if('token' in message&&message.token?.jti)await db().delete(sessions).where(eq(sessions.sessionToken,hashToken(message.token.jti)));}},
-  logger:{error(){console.error('auth failure');},warn(code){console.warn('auth:',code);},debug(){}},
+  logger:{error(error){console.error('auth failure:',error instanceof AuthError?error.type:error.name);},warn(code){console.warn('auth:',code);},debug(){}},
 });
