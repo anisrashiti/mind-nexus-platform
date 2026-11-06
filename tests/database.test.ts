@@ -4,7 +4,7 @@ import { createHmac } from 'node:crypto';
 import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import {
   organizations,
@@ -366,5 +366,154 @@ describe.runIf(enabled)('Postgres transaction and privacy integration', () => {
       .select({ count: sql<number>`count(*)::int` })
       .from(auditLog);
     expect(row.count).toBeGreaterThan(0);
+  });
+  it('catches up daily reminders, including bookings made less than 24 hours ahead', async () => {
+    const runAt = new Date('2026-11-15T07:00:00Z');
+    const cases = [
+      { hours: -24, due: false },
+      { hours: -1, due: false },
+      { hours: 0, due: false },
+      { hours: 12, due: true },
+      { hours: 24, due: true },
+      { hours: 25, due: false },
+      { hours: 14, due: false, status: 'cancelled' as const },
+      { hours: 16, due: false, reminder24hSentAt: new Date(+runAt - 3600000) },
+    ];
+    const rows = [];
+    for (const testCase of cases) {
+      const e = await employee();
+      const startsAt = new Date(+runAt + testCase.hours * 3600000);
+      const [a] = await db()
+        .insert(appointments)
+        .values({
+          employeeId: e.id,
+          psychologistId,
+          organizationId,
+          startsAt,
+          endsAt: new Date(+startsAt + 50 * 60000),
+          createdAt: new Date(+startsAt - 13 * 3600000),
+          status: testCase.status ?? 'confirmed',
+          reminder24hSentAt: testCase.reminder24hSentAt,
+        })
+        .returning();
+      rows.push({ ...a, due: testCase.due });
+    }
+    const mock = vi.spyOn(emailService, 'sendEmail').mockResolvedValue(undefined);
+    try {
+      await sendDueReminders(runAt);
+      await sendDueReminders(runAt);
+      for (const row of rows) {
+        const calls = mock.mock.calls.filter(([input]) => input.idempotencyKey?.includes(row.id));
+        expect(calls).toHaveLength(row.due ? 2 : 0);
+        expect(calls.every(([input]) => input.template === 'reminder-24h')).toBe(true);
+        const [stored] = await db().select().from(appointments).where(eq(appointments.id, row.id));
+        expect(stored.reminder24hSentAt).toEqual(row.due ? runAt : row.reminder24hSentAt);
+        expect(stored.reminder15mSentAt).toBeNull();
+      }
+    } finally {
+      mock.mockRestore();
+    }
+  });
+  it('sends the 15-minute reminder only before the start and only once', async () => {
+    const runAt = new Date('2026-11-17T07:00:00Z');
+    const rows = [];
+    for (const minutes of [-60, 10, 60]) {
+      const e = await employee();
+      const startsAt = new Date(+runAt + minutes * 60000);
+      const [a] = await db()
+        .insert(appointments)
+        .values({
+          employeeId: e.id,
+          psychologistId,
+          organizationId,
+          startsAt,
+          endsAt: new Date(+startsAt + 50 * 60000),
+          reminder24hSentAt: new Date(+runAt - 3600000),
+        })
+        .returning();
+      rows.push({ ...a, due: minutes === 10 });
+    }
+    const mock = vi.spyOn(emailService, 'sendEmail').mockResolvedValue(undefined);
+    try {
+      await sendDueReminders(runAt);
+      await sendDueReminders(runAt);
+      for (const row of rows) {
+        const calls = mock.mock.calls.filter(([input]) => input.idempotencyKey?.includes(row.id));
+        expect(calls).toHaveLength(row.due ? 2 : 0);
+        expect(calls.every(([input]) => input.template === 'reminder-15m')).toBe(true);
+        const [stored] = await db().select().from(appointments).where(eq(appointments.id, row.id));
+        expect(stored.reminder15mSentAt).toEqual(row.due ? runAt : null);
+      }
+    } finally {
+      mock.mockRestore();
+    }
+  });
+  it('settles every ended confirmed appointment in a backlog without duplicate refunds or audits', async () => {
+    const runAt = new Date('2026-11-18T23:00:00Z');
+    const rows = [];
+    for (let i = 0; i < 101; i++) {
+      const e = await employee();
+      const startsAt = new Date(+new Date('2026-08-01T07:00:00Z') + i * 3600000);
+      const [a] = await db()
+        .insert(appointments)
+        .values({
+          employeeId: e.id,
+          psychologistId,
+          organizationId,
+          startsAt,
+          endsAt: new Date(+startsAt + 50 * 60000),
+          employeeJoinedAt: i % 4 === 1 || i % 4 === 2 ? startsAt : null,
+          psychologistJoinedAt: i % 4 >= 2 ? startsAt : null,
+        })
+        .returning();
+      rows.push(a);
+    }
+    const ids = rows.map((a) => a.id);
+    const mock = vi.spyOn(emailService, 'sendEmail').mockResolvedValue(undefined);
+    try {
+      await reconcileAttendance(runAt);
+      const settled = await db().select().from(appointments).where(inArray(appointments.id, ids));
+      for (const a of settled) {
+        expect(a.status).toBe(
+          a.employeeJoinedAt
+            ? a.psychologistJoinedAt
+              ? 'completed'
+              : 'cancelled_by_psychologist'
+            : 'no_show',
+        );
+        expect(a.outcome).toBe(a.employeeJoinedAt ? 'none' : 'pending');
+      }
+      const refunds = await db()
+        .select()
+        .from(sessionLedger)
+        .where(and(inArray(sessionLedger.appointmentId, ids), eq(sessionLedger.reason, 'refund')));
+      expect(refunds.map((r) => r.appointmentId).sort()).toEqual(
+        rows
+          .filter((a) => a.employeeJoinedAt && !a.psychologistJoinedAt)
+          .map((a) => a.id)
+          .sort(),
+      );
+      const audits = await db().select().from(auditLog).where(inArray(auditLog.entityId, ids));
+      expect(audits).toHaveLength(101);
+      const emails = mock.mock.calls.filter(([input]) =>
+        ids.some((id) => input.idempotencyKey?.includes(id)),
+      );
+      expect(emails).toHaveLength(refunds.length);
+      await reconcileAttendance(runAt);
+      expect(await db().select().from(appointments).where(inArray(appointments.id, ids))).toEqual(
+        settled,
+      );
+      expect(
+        await db().select().from(sessionLedger).where(inArray(sessionLedger.appointmentId, ids)),
+      ).toEqual(refunds);
+      expect(await db().select().from(auditLog).where(inArray(auditLog.entityId, ids))).toEqual(
+        audits,
+      );
+      expect(
+        mock.mock.calls.filter(([input]) => ids.some((id) => input.idempotencyKey?.includes(id))),
+      ).toEqual(emails);
+    } finally {
+      mock.mockRestore();
+    }
   });
 });

@@ -15,8 +15,7 @@ export async function sendDueReminders(now = new Date()) {
         lte(appointments.startsAt, new Date(+now + 24 * 3600000)),
         or(isNull(appointments.reminder24hSentAt), isNull(appointments.reminder15mSentAt)),
       ),
-    )
-    .limit(100);
+    );
   for (const candidate of candidates)
     await db().transaction(async (tx) => {
       const [a] = await tx
@@ -32,8 +31,7 @@ export async function sendDueReminders(now = new Date()) {
       for (const minutes of [1440, 15] as const) {
         const sent = minutes === 1440 ? a.reminder24hSentAt : a.reminder15mSentAt;
         const due = +a.startsAt - +now <= minutes * 60000;
-        const existedAtDeadline = +a.createdAt <= +a.startsAt - minutes * 60000;
-        if (sent || !due || !existedAtDeadline) continue;
+        if (sent || !due) continue;
         const template = minutes === 1440 ? 'reminder-24h' : 'reminder-15m';
         await Promise.all(
           usersToEmail.map((user) =>

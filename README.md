@@ -37,9 +37,11 @@ The detailed phase record is [docs/PHASES.md](docs/PHASES.md). Auth.js Credentia
 
 ## Before production
 
-Deployment is prepared for Vercel `fra1`; [vercel.json](vercel.json) defines both protected five-minute jobs. Provision Neon or Supabase in Frankfurt, apply migrations using a migration role, seed the real organization and clinician, and set the variables from `.env.example` in Vercel. Use a restricted application database role; grant only SELECT/INSERT on `audit_log`. Keep database/Resend/Whereby access within the client's approved region/account configuration.
+Deployment is prepared for Vercel `fra1`; [vercel.json](vercel.json) defines both protected daily jobs for the Hobby plan (reminders at 07:00 UTC and attendance at 23:00 UTC). Provision Neon or Supabase in Frankfurt, apply migrations using a migration role, seed the real organization and clinician, and set the variables from `.env.example` in Vercel. Use a restricted application database role; grant only SELECT/INSERT on `audit_log`. Keep database/Resend/Whereby access within the client's approved region/account configuration.
 
-Configure the Whereby webhook at `/api/webhooks/whereby`, add the application origin to its allowed domains, disable recording/transcription in the account, and verify a real employee/host call. Verify the Resend sender domain and actual delivery. Vercel's five-minute schedule requires a plan that supports that frequency ([official Cron limits](https://vercel.com/docs/schedules/cron-jobs/usage-and-pricing)).
+Configure the Whereby webhook at `/api/webhooks/whereby`, add the application origin to its allowed domains, disable recording/transcription in the account, and verify a real employee/host call. Verify the Resend sender domain and actual delivery. Daily reminders cover unsent sessions starting within the next 24 hours; attendance catches up on ended sessions. A daily schedule cannot reliably deliver 15-minute reminders or mark no-shows promptly ([official Cron limits](https://vercel.com/docs/cron-jobs/usage-and-pricing)).
+
+<!-- TODO: On Vercel Pro, set both crons back to */5 * * * * to restore 15-minute reminders and quick no-show marking. -->
 
 Client-provided production accounts, domain/DNS, organization/contact details, bio, hours, full consent, terms/privacy and Albanian translations remain open. All approval switches and placeholder references live in [src/content/placeholders.ts](src/content/placeholders.ts). Production booking and invitation acceptance stay blocked until their legal content is approved; do not flip those switches without replacing the draft text. `messages/sq.json` is intentionally empty and falls back to English.
 

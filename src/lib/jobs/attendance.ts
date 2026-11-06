@@ -17,8 +17,7 @@ export async function reconcileAttendance(now = new Date()) {
           and(eq(appointments.status, 'no_show'), eq(appointments.outcome, 'pending')),
         ),
       ),
-    )
-    .limit(100);
+    );
   for (const candidate of candidates) {
     const refund = await db().transaction(async (tx) => {
       await tx
