@@ -178,7 +178,6 @@ ALTER TABLE "appointments" ADD CONSTRAINT "appointments_employee_id_users_id_fk"
 ALTER TABLE "appointments" ADD CONSTRAINT "appointments_psychologist_id_users_id_fk" FOREIGN KEY ("psychologist_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "appointments" ADD CONSTRAINT "appointments_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "appointments" ADD CONSTRAINT "appointments_cancelled_by_users_id_fk" FOREIGN KEY ("cancelled_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "appointments" ADD CONSTRAINT "appointment_employee_organization_fk" FOREIGN KEY ("employee_id","organization_id") REFERENCES "public"."users"("id","organization_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "audit_log" ADD CONSTRAINT "audit_log_actor_id_users_id_fk" FOREIGN KEY ("actor_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "availability_rules" ADD CONSTRAINT "availability_rules_psychologist_id_users_id_fk" FOREIGN KEY ("psychologist_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "consents" ADD CONSTRAINT "consents_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -197,7 +196,8 @@ ALTER TABLE "users" ADD CONSTRAINT "users_organization_id_organizations_id_fk" F
 CREATE UNIQUE INDEX "one_confirmed_per_employee" ON "appointments" USING btree ("employee_id") WHERE "appointments"."status" = 'confirmed';--> statement-breakpoint
 CREATE UNIQUE INDEX "one_consent_version" ON "consents" USING btree ("user_id","version");--> statement-breakpoint
 CREATE UNIQUE INDEX "appointment_ledger_reason_once" ON "session_ledger" USING btree ("appointment_id","reason") WHERE "session_ledger"."appointment_id" is not null;--> statement-breakpoint
-CREATE UNIQUE INDEX "user_organization_key" ON "users" USING btree ("id","organization_id");
+CREATE UNIQUE INDEX "user_organization_key" ON "users" USING btree ("id","organization_id");--> statement-breakpoint
+ALTER TABLE "appointments" ADD CONSTRAINT "appointment_employee_organization_fk" FOREIGN KEY ("employee_id","organization_id") REFERENCES "public"."users"("id","organization_id") ON DELETE no action ON UPDATE no action;
 
 --> statement-breakpoint
 ALTER TABLE appointments ADD CONSTRAINT no_psychologist_overlap EXCLUDE USING gist (psychologist_id WITH =, tstzrange(starts_at, ends_at, '[)') WITH &&) WHERE (status IN ('confirmed','completed','no_show','late_cancelled'));

@@ -13,3 +13,10 @@
 3. Implemented revocable opaque database sessions through the Auth.js Credentials codec, durable hashed rate limits, CSP and privacy headers.
 4. Validation: lint, typecheck and unit tests passed before commit; authentication integration tests follow against isolated Postgres during final QA.
 5. TODO(question): Auth.js Credentials requires JWT mode internally; documented the database-backed codec in AUTH.md. Legal approval and real service credentials remain release requirements.
+
+## Phase 2
+1. Implemented weekly availability toggles, multiple ranges, copy Monday, staged time-off editing and save/discard.
+2. Built the UTC-returning slot engine with Europe/Belgrade wall times, overlap exclusion, notice limits and sorted deduplication.
+3. Availability updates take the clinician row lock shared with booking, preserving existing appointments; corrected generated foreign-key ordering and verified migration/seed on isolated Postgres.
+4. Validation: lint, typecheck and all slot tests passed before commit, covering grid, overlap, 12-hour/28-day boundaries, time off, range ends, both DST weekends and multiple ranges.
+5. TODO(question): Fall-back ambiguous hours use date-fns-tz's canonical occurrence; nonexistent spring times are skipped. Confirm real weekly hours before launch.
