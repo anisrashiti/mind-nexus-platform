@@ -4,6 +4,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages, getTranslations } from 'next-intl/server';
 import sq from '../../messages/sq.json';
 import './globals.css';
+import { DemoBanner } from '@/demo/banner'; // DEMO: remove before production
 const serif = Newsreader({
   subsets: ['latin'],
   weight: ['400', '500'],
@@ -30,7 +31,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang={locale === 'sq' && Object.keys(sq).length === 0 ? 'en' : locale}>
       <body className={`${serif.variable} ${sans.variable}`}>
-        <NextIntlClientProvider messages={await getMessages()}>{children}</NextIntlClientProvider>
+        <NextIntlClientProvider messages={await getMessages()}>
+          <DemoBanner /> {/* // DEMO: remove before production */}
+          {children}
+        </NextIntlClientProvider>
       </body>
     </html>
   );

@@ -57,6 +57,7 @@ export const users = pgTable(
     passwordHash: text('password_hash'),
     role: roles('role').notNull(),
     isAdmin: boolean('is_admin').notNull().default(false),
+    isDemo: boolean('is_demo').notNull().default(false), // DEMO: remove before production
     locale: locales('locale').notNull().default('en'),
     status: accessStatuses('status').notNull().default('invited'),
     invitedAt: stamp('invited_at'),

@@ -8,6 +8,7 @@ import { db } from '@/lib/db/client';
 import { users, organizations, sessions } from '@/lib/db/schema';
 import { hashToken, newToken } from '@/lib/crypto';
 import { takeRateLimit } from './rate-limit';
+import { demoAccountAllowed } from '@/demo/config'; // DEMO: remove before production
 const secure =
   process.env.NODE_ENV === 'production' || !!process.env.APP_URL?.startsWith('https://');
 const maxAge = 7 * 24 * 60 * 60;
@@ -51,6 +52,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           () => false,
         );
         if (!matches || !user || user.status !== 'active') return null;
+        if (!demoAccountAllowed(user.isDemo)) return null; // DEMO: remove before production
         if (user.role !== 'psychologist') {
           if (!user.organizationId) return null;
           const org = (
@@ -85,12 +87,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (!token || !process.env.DATABASE_URL || !/^[a-f0-9]{64}$/.test(token)) return null;
       const row = (
         await db()
-          .select({ id: users.id, status: users.status })
+          .select({ id: users.id, status: users.status, isDemo: users.isDemo }) // DEMO: remove before production (restore id/status only)
           .from(sessions)
           .innerJoin(users, eq(users.id, sessions.userId))
           .where(and(eq(sessions.sessionToken, hashToken(token)), gt(sessions.expires, new Date())))
           .limit(1)
       )[0];
+      if (row && !demoAccountAllowed(row.isDemo)) return null; // DEMO: remove before production
       return row?.status === 'active' ? { sub: row.id, jti: token } : null;
     },
   },

@@ -18,6 +18,7 @@ import { sendEmail } from '@/lib/email/send';
 import { refundOnce } from '@/lib/booking/settle';
 import { notifyCancelled } from '@/lib/booking/notifications';
 import { parseInviteEmails } from './invites';
+import { demoEnabled } from '@/demo/config'; // DEMO: remove before production
 async function issueInvite(tx: Transaction, actor: User, employee: { id: string; email: string }) {
   const token = newToken();
   await tx
@@ -56,6 +57,7 @@ export async function inviteEmployees(input: unknown) {
           email,
           fullName: '',
           role: 'employee',
+          isDemo: demoEnabled(), // DEMO: remove before production
           status: 'invited',
           invitedAt: new Date(),
         })

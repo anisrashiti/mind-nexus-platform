@@ -324,6 +324,74 @@
     "privacyDraft": "The privacy policy is awaiting the client's approved text.",
     "termsDraft": "The terms are awaiting the client's approved text."
   },
+  "demo": {
+    "mode": "Demo mode",
+    "banner": "Demo mode · Viewing as {role}",
+    "controls": "Demo controls",
+    "switch": "Switch view",
+    "reset": "Reset demo data",
+    "resetting": "Resetting…",
+    "resetTitle": "Reset demo data?",
+    "resetDescription": "This restores the sample views for everyone using this demo and signs out all demo sessions. You'll return to the view selector.",
+    "resetHint": "Changes are shared across this preview. Reset whenever you want to start again.",
+    "lockedTitle": "A private preview of Mind Nexus",
+    "lockedDescription": "Enter your preview access code to explore the experience.",
+    "accessCode": "Preview access code",
+    "open": "Open preview",
+    "opening": "Opening…",
+    "title": "Choose a view",
+    "description": "Explore the employee, psychologist and HR experiences with sample accounts.",
+    "sampleNote": "All people, appointments and messages in this preview are sample data. Emails, video calls and scheduled jobs are disabled.",
+    "notReady": "The sample views aren't ready yet. Reset demo data to prepare them.",
+    "incorrectCode": "The access code is incorrect.",
+    "rateLimited": "Too many attempts. Please try again later.",
+    "unavailable": "This demo view is unavailable. Check the preview setup or reset the sample data.",
+    "view": "Open view",
+    "viewAction": "Open {view}",
+    "roles": {
+      "visitor": "Visitor",
+      "employee": "Employee",
+      "psychologist": "Psychologist · Admin",
+      "hr": "HR"
+    },
+    "views": {
+      "available": {
+        "title": "Employee · Not booked",
+        "description": "An available session and the booking experience."
+      },
+      "booked": {
+        "title": "Employee · Booked",
+        "description": "A confirmed session, video join window and cancellation options."
+      },
+      "used": {
+        "title": "Employee · Session used",
+        "description": "The completed session state, with urgent help still available."
+      },
+      "psychologist": {
+        "title": "Luljeta · Psychologist + admin",
+        "description": "Schedule, availability, urgent messages and organization settings."
+      },
+      "hr": {
+        "title": "HR · Organization",
+        "description": "Employee access, invitations and privacy-protected totals."
+      }
+    },
+    "sample": {
+      "organization": "Dardania Group · Demo",
+      "hr": "Drita Morina",
+      "available": "Arta Krasniqi",
+      "booked": "Elira Gashi",
+      "used": "Dren Hoxha",
+      "later": "Besnik Shala",
+      "missed": "Nora Berisha",
+      "invited": "Lira Kelmendi",
+      "deactivated": "Arben Gashi",
+      "active": "Era Hasani",
+      "timeOff": "Sample time off",
+      "newMessage": "Sample message: I'd like to talk about balancing my workload and getting better sleep. Could we arrange a time to speak?",
+      "handledMessage": "Sample message: Thank you for helping me find a quieter time to talk. I have the information I need."
+    }
+  },
   "email": {
     "inviteSubject": "{organization} has invited you to Mind Nexus",
     "inviteBody": "Your organization has provided access to confidential sessions. Accept your invitation within 14 days.",

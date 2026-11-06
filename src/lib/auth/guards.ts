@@ -5,12 +5,14 @@ import { eq } from 'drizzle-orm';
 import { auth } from './config';
 import { db } from '@/lib/db/client';
 import { users, organizations, type User } from '@/lib/db/schema';
+import { allowDemoUser } from '@/demo/access'; // DEMO: remove before production
 export const currentUser = cache(async () => {
   if (!process.env.DATABASE_URL || !process.env.AUTH_SECRET) return null;
   const session = await auth();
   if (!session?.user?.id) return null;
   const user = (await db().select().from(users).where(eq(users.id, session.user.id)).limit(1))[0];
   if (!user || user.status !== 'active') return null;
+  if (!(await allowDemoUser(user))) return null; // DEMO: remove before production
   if (user.role !== 'psychologist') {
     if (!user.organizationId) return null;
     const org = (

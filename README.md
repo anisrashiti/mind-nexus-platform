@@ -46,3 +46,7 @@ Configure the Whereby webhook at `/api/webhooks/whereby`, add the application or
 Client-provided production accounts, domain/DNS, organization/contact details, bio, hours, full consent, terms/privacy and Albanian translations remain open. All approval switches and placeholder references live in [src/content/placeholders.ts](src/content/placeholders.ts). Production booking and invitation acceptance stay blocked until their legal content is approved; do not flip those switches without replacing the draft text. `messages/sq.json` is intentionally empty and falls back to English.
 
 No production deployment or live email/video acceptance is implied by a successful local build.
+
+## Temporary client preview
+
+Use `/demo` with `DEMO_MODE=true` and a private `DEMO_ACCESS_CODE`, on a separate demo-only database. Run `pnpm db:migrate` and `pnpm demo:seed`; then choose any of the five sample views. Emails, video services and cron processing are disabled in demo mode. With the flag off, demo routes return 404 and the banner disappears. See [DEMO_REMOVAL.md](DEMO_REMOVAL.md) for Vercel setup, retained consent checks, reset behavior and exact removal/cleanup steps.
