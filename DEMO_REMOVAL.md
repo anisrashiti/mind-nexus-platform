@@ -9,6 +9,26 @@ The preview URL is `/demo`. This is a shared, synthetic workspace: every viewer 
 3. With the same preview database/environment locally, run `pnpm db:migrate` and `pnpm demo:seed`. Apply migrations to every database running this branch, including deployments with demo mode off; the new column defaults to false for existing users. Do not run `pnpm db:seed` against the preview database: that command creates real-account fixtures. The protected **Reset demo data** control can also initialize the sample dataset after migrations.
 4. Redeploy after setting the variables, open `https://<preview-domain>/demo`, enter the access code, then choose a view. Share the code privately. No account password is needed.
 
+## Run the preview locally
+
+Next.js reads `.env.local` in the project root; `.env.example` is a template and is never loaded. Keep real values out of the template and Git. Migration, Drizzle configuration and demo seed commands read `.env.local` first, then `.env`; existing process environment values take precedence.
+
+Create `.env.local` from the template if it does not exist. Preserve existing secrets. Set `DEMO_MODE=true`, a local `DEMO_ACCESS_CODE`, `APP_URL=http://localhost:3000`, `AUTH_SECRET`, and a base64 32-byte `ENCRYPTION_KEY`. Paste a connection string for a separate, empty demo Postgres database into `DATABASE_URL` in that file. Resend, Whereby and normal seed passwords are unnecessary for this demo. Do not use the normal `db:seed` command.
+
+After configuring the database, run these from the project root:
+
+```powershell
+npm.cmd run db:migrate
+npm.cmd run demo:seed
+npm.cmd run dev
+```
+
+Open `http://localhost:3000/demo` and enter the code from `.env.local`. On later runs, only `npm.cmd run dev` is needed; rerun `demo:seed` when you want fresh sample states. Restart the dev server after editing environment variables. The same scripts also work through pnpm.
+
+The only demo flag is `DEMO_MODE`, and it must equal the exact string `true`. There is no `NEXT_PUBLIC_DEMO_MODE` check and no production-only demo gate. Missing `DEMO_ACCESS_CODE` or `AUTH_SECRET` also makes `/demo` return 404. Demo actions require a valid, unexpired access cookie. `NODE_ENV` and an HTTPS `APP_URL` select secure cookies, rather than enabling the demo. Auth.js trusts the host in development or when `VERCEL` is set. `SEED_DEMO` belongs to the separate normal database seed, not this feature. `RESEND_API_KEY`, `WHEREBY_API_KEY`, `EMAIL_FROM`, `PSYCHOLOGIST_ALERT_EMAIL`, `WHEREBY_WEBHOOK_SECRET`, and normal seed passwords are unnecessary for demo sign-in; `CRON_SECRET` only protects cron endpoints, whose jobs are skipped in demo mode.
+
+An unavailable view means the database is unreachable/unmigrated, contains non-demo users or another organization, lacks an active seeded user of the expected role/admin status, or cannot create its session. A reset also needs a valid encryption key and database permissions. Bad view/reset inputs return unavailable; wrong codes and rate limits have separate messages. These checks stay active locally and in production.
+
 The demo creates normal hashed database sessions with the existing Auth.js cookie names/options. Role, organization, ownership, allowance, 12-hour notice, cancellation, consent and video join-window checks remain active. HR still sees only access data and anonymous totals; the sample total remains hidden below five. The existing production consent/legal approval gates are deliberately preserved, so confirming a new booking on Vercel remains blocked while client approval is pending.
 
 Seed/reset uses the real current time and 30-minute starts. **TODO(question):** near the end of the Kosovo day, the upcoming schedule examples roll into tomorrow; reset again when reviewing the next day. Reset does not fake a clock or bypass join windows.
