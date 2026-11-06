@@ -34,3 +34,10 @@
 3. Built organization editing, allowance stepper, statistics, employee search/filter and confirmed extra-session grants with audit records.
 4. Validation: lint, typecheck and unit tests passed before commit; no employee identity or appointment status is exposed through HR components.
 5. TODO(question): Sessions-used totals count completed sessions and clinician-kept late/no-show outcomes; pending decisions are excluded until the client confirms the reporting definition.
+
+## Phase 5
+1. Built the HR employee table, access search/filter, email chips invitation dialog, resend and deactivation confirmation.
+2. Added normalized/deduplicated batch invites, hashed 14-day tokens, email delivery and existing-account skipping.
+3. HR receives a restricted DTO and no per-person usage; totals below five are null before rendering. Deactivation privately cancels future bookings, refunds once and revokes access.
+4. Validation: lint, typecheck and privacy/invite parser unit tests passed before commit; cross-role browser assertions are included in final QA.
+5. TODO(question): No additional product behavior was inferred; the sessions-used reporting definition from phase 4 remains pending client confirmation.
