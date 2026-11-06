@@ -1,3 +1,15 @@
-import {describe,it,expect} from 'vitest';
-import {urgentSchema} from './validation';
-describe('urgent message input',()=>{it('requires a body and enforces 2000 characters',()=>{expect(urgentSchema.safeParse({body:'   ',phone:''}).success).toBe(false);expect(urgentSchema.safeParse({body:'x'.repeat(2000)}).success).toBe(true);expect(urgentSchema.safeParse({body:'x'.repeat(2001)}).success).toBe(false);});it('accepts an optional telephone and rejects URI payloads',()=>{expect(urgentSchema.safeParse({body:'test',phone:'+383 44 123 456'}).success).toBe(true);expect(urgentSchema.safeParse({body:'test',phone:'javascript:alert(1)'}).success).toBe(false);});});
+import { describe, it, expect } from 'vitest';
+import { urgentSchema } from './validation';
+describe('urgent message input', () => {
+  it('requires a body and enforces 2000 characters', () => {
+    expect(urgentSchema.safeParse({ body: '   ', phone: '' }).success).toBe(false);
+    expect(urgentSchema.safeParse({ body: 'x'.repeat(2000) }).success).toBe(true);
+    expect(urgentSchema.safeParse({ body: 'x'.repeat(2001) }).success).toBe(false);
+  });
+  it('accepts an optional telephone and rejects URI payloads', () => {
+    expect(urgentSchema.safeParse({ body: 'test', phone: '+383 44 123 456' }).success).toBe(true);
+    expect(urgentSchema.safeParse({ body: 'test', phone: 'javascript:alert(1)' }).success).toBe(
+      false,
+    );
+  });
+});

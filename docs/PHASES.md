@@ -55,3 +55,10 @@
 3. Built the clinician inbox, preview/detail audits, read/handled states, call/email links and next-session context; HR has no inbox access.
 4. Validation: lint, typecheck and all unit tests passed before commit; employee login has now been verified against local Postgres in Chrome.
 5. TODO(question): No new product questions; live urgent-alert delivery awaits the client's Resend credentials and verified sender.
+
+## Phase 8 — local validation complete; production release pending
+1. Added the completed-session home, Figma-aligned mobile booking/confirmation/urgent layouts, responsive tablet fixes, accessible error states and localized metadata.
+2. Hardened database-error privacy and auth lock ordering; handled native same-origin form submissions under no-referrer while rejecting opaque cross-site requests.
+3. Validation: lint, typecheck, 54 tests (13 real Postgres), the Playwright booking/cancellation smoke, 12 axe-clean views, native invite/reset/login checks and the production build all passed.
+4. Prepared Vercel fra1/Cron configuration, setup/release/QA documentation and a local phase commit; no push, production database provisioning or deployment was performed.
+5. TODO(question): Production needs client infrastructure/keys, verified email/video delivery, approved legal/consent content, real organization/profile/hours and the previously recorded client decisions; this shipping portion remains outstanding.

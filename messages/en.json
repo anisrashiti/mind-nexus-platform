@@ -1,5 +1,6 @@
 {
   "common": {
+    "description": "Confidential mental-health sessions provided by your organization.",
     "brand": "Mind Nexus",
     "en": "EN",
     "sq": "SQ",
@@ -31,7 +32,8 @@
     "saved": "Changes saved.",
     "pending": "Please wait…",
     "notFound": "This page is unavailable.",
-    "goHome": "Back to home"
+    "goHome": "Back to home",
+    "tryAgain": "Try again"
   },
   "profile": {
     "name": "Luljeta Berisha",
@@ -48,7 +50,7 @@
     "privacy": "Never recorded. Your organization never sees what you discuss"
   },
   "auth": {
-    "headline": "Support that fits into your workday.",
+    "headline": "Support that fits\ninto your workday.",
     "intro": "Confidential sessions with licensed psychologists, provided by your organization.",
     "reassurance1": "Your employer never sees what you discuss",
     "reassurance2": "Sessions happen right here, by video",
@@ -62,8 +64,8 @@
     "loginError": "Email or password is incorrect",
     "unconfigured": "The platform is awaiting database configuration. Please contact your organization.",
     "invitedBy": "Invited by {organization}",
-    "inviteTitle": "A little space for you",
-    "inviteDescription": "Create your account to book a confidential session.",
+    "inviteTitle": "Set up your account",
+    "inviteDescription": "Confidential support with licensed psychologists, provided by your employer. It takes a minute.",
     "fullName": "Full name",
     "create": "Create account",
     "termsLabel": "I agree to the terms and privacy policy.",
@@ -71,8 +73,8 @@
     "ruleNumber": "Includes a number",
     "ruleCommon": "Not a common password",
     "expired": "This link has expired or has already been used.",
-    "forgotTitle": "Forgot your password?",
-    "forgotDescription": "Enter your work email and we'll send you a reset link.",
+    "forgotTitle": "Reset your password",
+    "forgotDescription": "Enter your work email and we'll send you a link to choose a new password.",
     "sendReset": "Send reset link",
     "checkTitle": "Check your email",
     "checkDescription": "If an active account uses this email, you'll receive a link to reset your password. The link expires in 30 minutes.",
@@ -279,6 +281,9 @@
     "removeEmail": "Remove {email}"
   },
   "urgent": {
+    "placeholder": "What's happening?",
+    "phoneCaption": "Add a number if you'd like Luljeta to call you back. Messages aren't monitored around the clock.",
+    "mobileCaption": "Only Luljeta sees this. She'll contact you as soon as she can.",
     "title": "Urgent help",
     "danger": "In immediate danger? Call 112",
     "or": "Or send an urgent message to Luljeta",
