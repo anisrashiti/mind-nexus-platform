@@ -48,3 +48,10 @@
 3. Added authenticated five-minute reminder/attendance crons, idempotent no-show/refund handling and room cleanup; fixed a timestamp-serialization issue found by browser login QA.
 4. Validation: lint, typecheck, raw-signature/replay/role tests and existing tests passed before commit; live Whereby/Resend calls remain unverified without service keys.
 5. TODO(question): Whereby rejects the spec's externalId format and does not terminate at endDate; documented the signed metadata adaptation and app/cron end enforcement in VIDEO.md.
+
+## Phase 7
+1. Added the always-accessible employee urgent-help dialog/mobile sheet with the 112 link first, required message, optional phone and success toast.
+2. Implemented AES-GCM storage, atomic durable five-per-hour rate limiting and an immediate clinician email containing no message body or phone.
+3. Built the clinician inbox, preview/detail audits, read/handled states, call/email links and next-session context; HR has no inbox access.
+4. Validation: lint, typecheck and all unit tests passed before commit; employee login has now been verified against local Postgres in Chrome.
+5. TODO(question): No new product questions; live urgent-alert delivery awaits the client's Resend credentials and verified sender.
