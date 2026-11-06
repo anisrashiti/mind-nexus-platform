@@ -20,3 +20,10 @@
 3. Availability updates take the clinician row lock shared with booking, preserving existing appointments; corrected generated foreign-key ordering and verified migration/seed on isolated Postgres.
 4. Validation: lint, typecheck and all slot tests passed before commit, covering grid, overlap, 12-hour/28-day boundaries, time off, range ends, both DST weekends and multiple ranges.
 5. TODO(question): Fall-back ambiguous hours use date-fns-tz's canonical occurrence; nonexistent spring times are skipped. Confirm real weekly hours before launch.
+
+## Phase 3
+1. Built employee home, bookable-only week picker, consent confirmation, booked home, timed Join button, calendar download and cancellation dialog for desktop/mobile.
+2. Booking locks employee and clinician, rechecks organization, allowance and availability, inserts appointment/ledger/consent/audit atomically, then emails outside the transaction.
+3. Added allowance maths, 24-hour cancellation policy, idempotent refunds and expired-confirmed settlement; calendar content omits participant identities.
+4. Validation: lint, typecheck, slot/allowance/cancellation/join-boundary unit tests passed before commit; database race and browser smoke tests are scheduled in final QA.
+5. TODO(question): Approved full consent remains a production booking prerequisite; weekday UI follows the specified Mon–Fri row even if weekend hours are configured.
