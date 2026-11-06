@@ -27,3 +27,10 @@
 3. Added allowance maths, 24-hour cancellation policy, idempotent refunds and expired-confirmed settlement; calendar content omits participant identities.
 4. Validation: lint, typecheck, slot/allowance/cancellation/join-boundary unit tests passed before commit; database race and browser smoke tests are scheduled in final QA.
 5. TODO(question): Approved full consent remains a production booking prerequisite; weekday UI follows the specified Mon–Fri row even if weekend hours are configured.
+
+## Phase 4
+1. Built the clinician's daily schedule, pending-outcome rows, join/cancel controls, unread count and three-day coming-up totals.
+2. Added locked, idempotent give-back/keep decisions and psychologist cancellations with refunds and employee email.
+3. Built organization editing, allowance stepper, statistics, employee search/filter and confirmed extra-session grants with audit records.
+4. Validation: lint, typecheck and unit tests passed before commit; no employee identity or appointment status is exposed through HR components.
+5. TODO(question): Sessions-used totals count completed sessions and clinician-kept late/no-show outcomes; pending decisions are excluded until the client confirms the reporting definition.
