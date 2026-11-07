@@ -4,27 +4,14 @@ import { redirect, notFound } from 'next/navigation';
 import { eq } from 'drizzle-orm';
 import { auth } from './config';
 import { db } from '@/lib/db/client';
-import { users, organizations, type User } from '@/lib/db/schema';
-import { allowDemoUser } from '@/demo/access'; // DEMO: remove before production
+import { users, type User } from '@/lib/db/schema';
+import { hasAccess } from './access';
 export const currentUser = cache(async () => {
   if (!process.env.DATABASE_URL || !process.env.AUTH_SECRET) return null;
   const session = await auth();
   if (!session?.user?.id) return null;
   const user = (await db().select().from(users).where(eq(users.id, session.user.id)).limit(1))[0];
-  if (!user || user.status !== 'active') return null;
-  if (!(await allowDemoUser(user))) return null; // DEMO: remove before production
-  if (user.role !== 'psychologist') {
-    if (!user.organizationId) return null;
-    const org = (
-      await db()
-        .select({ status: organizations.status })
-        .from(organizations)
-        .where(eq(organizations.id, user.organizationId))
-        .limit(1)
-    )[0];
-    if (org?.status !== 'active') return null;
-  }
-  return user;
+  return user && (await hasAccess(user)) ? user : null;
 });
 export const roleHome = (role: User['role']) =>
   role === 'psychologist' ? '/psychologist' : role === 'hr' ? '/hr' : '/';

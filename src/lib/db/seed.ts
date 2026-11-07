@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import { config } from 'dotenv';
 import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { eq } from 'drizzle-orm';
@@ -6,6 +6,7 @@ import { hash, argon2id } from 'argon2';
 import { placeholders } from '../../content/placeholders';
 import en from '../../../messages/en.json';
 import * as s from './schema';
+config({ path: ['.env.local', '.env'], quiet: true });
 async function main() {
   if (
     !process.env.DATABASE_URL ||
@@ -136,7 +137,7 @@ async function main() {
                   psychologistId: clinician.id,
                   organizationId: org.id,
                   startsAt,
-                  endsAt: new Date(+startsAt + 3000000),
+                  endsAt: new Date(+startsAt + 50 * 60000),
                   status: 'completed',
                   employeeJoinedAt: startsAt,
                   psychologistJoinedAt: startsAt,
@@ -159,6 +160,6 @@ async function main() {
   }
 }
 main().catch(() => {
-  console.error('Seed failed. Check required environment variables.');
+  console.error('Seed failed. Check DATABASE_URL, PSYCHOLOGIST_ALERT_EMAIL and SEED_*_PASSWORD (10+ characters) in .env.local.');
   process.exitCode = 1;
 });

@@ -33,7 +33,7 @@ pnpm build
 
 Unit tests run without a database. To include the Postgres transaction/privacy tests, set `TEST_DATABASE_URL` to a dedicated loopback database whose name ends in `_test`. Tests migrate that database, create synthetic organizations/employees and deactivate prior synthetic clinician fixtures; never point this setting at shared data. The smoke test requires the local development seed, installed Chrome and a running local app (or lets Playwright start one). It signs in, gives consent, books, verifies the calendar and cancels with a refund. Traces, videos and automatic screenshots are disabled to avoid saving confidential sessions.
 
-The detailed phase record is [docs/PHASES.md](docs/PHASES.md). Auth.js Credentials/database compatibility is explained in [docs/AUTH.md](docs/AUTH.md), and current Whereby API differences in [docs/VIDEO.md](docs/VIDEO.md).
+The detailed phase record is [](). Auth.js Credentials/database compatibility is explained in [docs/AUTH.md](docs/AUTH.md), and current Whereby API differences in [docs/VIDEO.md](docs/VIDEO.md).
 
 ## Before production
 
@@ -46,7 +46,3 @@ Configure the Whereby webhook at `/api/webhooks/whereby`, add the application or
 Client-provided production accounts, domain/DNS, organization/contact details, bio, hours, full consent, terms/privacy and Albanian translations remain open. All approval switches and placeholder references live in [src/content/placeholders.ts](src/content/placeholders.ts). Production booking and invitation acceptance stay blocked until their legal content is approved; do not flip those switches without replacing the draft text. `messages/sq.json` is intentionally empty and falls back to English.
 
 No production deployment or live email/video acceptance is implied by a successful local build.
-
-## Temporary client preview
-
-Use `/demo` with `DEMO_MODE=true` and a private `DEMO_ACCESS_CODE`, on a separate demo-only database. Run `pnpm db:migrate` and `pnpm demo:seed`; then choose any of the five sample views. Emails, video services and cron processing are disabled in demo mode. With the flag off, demo routes return 404 and the banner disappears. See [DEMO_REMOVAL.md](DEMO_REMOVAL.md) for Vercel setup, retained consent checks, reset behavior and exact removal/cleanup steps.

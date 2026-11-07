@@ -5,10 +5,10 @@ import { verify } from 'argon2';
 import { and, eq, gt } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '@/lib/db/client';
-import { users, organizations, sessions } from '@/lib/db/schema';
+import { users, sessions } from '@/lib/db/schema';
 import { hashToken, newToken } from '@/lib/crypto';
 import { takeRateLimit } from './rate-limit';
-import { demoAccountAllowed } from '@/demo/config'; // DEMO: remove before production
+import { clientIp, hasAccess } from './access';
 const secure =
   process.env.NODE_ENV === 'production' || !!process.env.APP_URL?.startsWith('https://');
 const maxAge = 7 * 24 * 60 * 60;
@@ -34,13 +34,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           .safeParse(credentials);
         if (!result.success) return null;
         const email = result.data.email.toLowerCase();
-        const ip = (
-          request.headers.get('x-vercel-forwarded-for') ??
-          request.headers.get('x-forwarded-for') ??
-          'unknown'
-        )
-          .split(',')[0]
-          .trim();
+        const ip = clientIp(request.headers);
         const perPair = await takeRateLimit('login', `${ip}:${email}`, 10, 15 * 60000);
         const perIp = await takeRateLimit('login-ip', ip, 10, 15 * 60000);
         if (!perPair || !perIp) return null;
@@ -51,19 +45,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const matches = await verify(user?.passwordHash ?? fallback, result.data.password).catch(
           () => false,
         );
-        if (!matches || !user || user.status !== 'active') return null;
-        if (!demoAccountAllowed(user.isDemo)) return null; // DEMO: remove before production
-        if (user.role !== 'psychologist') {
-          if (!user.organizationId) return null;
-          const org = (
-            await db()
-              .select({ status: organizations.status })
-              .from(organizations)
-              .where(eq(organizations.id, user.organizationId))
-              .limit(1)
-          )[0];
-          if (org?.status !== 'active') return null;
-        }
+        if (!matches || !user || !(await hasAccess(user))) return null;
         return { id: user.id };
       },
     }),
@@ -87,13 +69,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (!token || !process.env.DATABASE_URL || !/^[a-f0-9]{64}$/.test(token)) return null;
       const row = (
         await db()
-          .select({ id: users.id, status: users.status, isDemo: users.isDemo }) // DEMO: remove before production (restore id/status only)
+          .select({ id: users.id, status: users.status })
           .from(sessions)
           .innerJoin(users, eq(users.id, sessions.userId))
           .where(and(eq(sessions.sessionToken, hashToken(token)), gt(sessions.expires, new Date())))
           .limit(1)
       )[0];
-      if (row && !demoAccountAllowed(row.isDemo)) return null; // DEMO: remove before production
       return row?.status === 'active' ? { sub: row.id, jti: token } : null;
     },
   },

@@ -9,6 +9,7 @@ import { signIn, signOut } from './config';
 import { redirectAuthenticated } from './guards';
 import { passwordSchema, emailSchema, tokenSchema } from './password';
 import { takeRateLimit } from './rate-limit';
+import { clientIp } from './access';
 import { db } from '@/lib/db/client';
 import { users, invites, passwordResets, sessions, organizations } from '@/lib/db/schema';
 import { newToken, hashToken } from '@/lib/crypto';
@@ -39,9 +40,7 @@ export async function forgotAction(_: AuthState, form: FormData): Promise<AuthSt
   if (!parsed.success) return { error: 'invalid' };
   if (!process.env.DATABASE_URL || !process.env.AUTH_SECRET) return { success: true };
   const h = await headers();
-  const ip = (h.get('x-vercel-forwarded-for') ?? h.get('x-forwarded-for') ?? 'unknown')
-    .split(',')[0]
-    .trim();
+  const ip = clientIp(h);
   if (
     !(await takeRateLimit('reset-ip', ip, 5, 3600000)) ||
     !(await takeRateLimit('reset-email', parsed.data, 5, 3600000))

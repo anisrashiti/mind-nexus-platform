@@ -3,7 +3,6 @@ import { Resend } from 'resend';
 import { createTranslator } from 'next-intl';
 import messages from '../../../messages/en.json';
 import { CalmEmail } from './templates/base';
-import { skipDemoEmail } from '@/demo/safety'; // DEMO: remove before production
 export type EmailTemplate =
   | 'invite'
   | 'password-reset'
@@ -24,7 +23,6 @@ type EmailInput = {
   returned?: boolean;
 };
 export async function sendEmail(input: EmailInput) {
-  if (skipDemoEmail()) return; // DEMO: remove before production
   if (!process.env.RESEND_API_KEY) {
     if (process.env.NODE_ENV === 'production') throw new Error('Email service is not configured');
     console.info(`email queued: ${input.template} to ${input.userId}`);
@@ -83,7 +81,6 @@ export async function sendEmail(input: EmailInput) {
           action={action}
           href={input.href ?? appUrl}
           footer={t('footer')}
-          appUrl={appUrl}
         />
       ),
       attachments: input.attachment

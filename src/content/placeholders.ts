@@ -18,7 +18,8 @@ export const placeholders = {
     [5, '09:00', '14:00'],
   ] as const,
   // TODO(content): Replace with clinician-reviewed consent, terms and privacy text; block production booking/invite acceptance until approved.
-  consentVersion: 'draft-v1',
+  // TODO(content): Consent now states 18+, the safety exception and urgent reply hours (weekdays 9:00–17:00). Luljeta must approve.
+  consentVersion: 'draft-v2',
   consentApproved: false,
   legalApproved: false,
   // TODO(content): Confirm optional portrait; use the specified initials until supplied.

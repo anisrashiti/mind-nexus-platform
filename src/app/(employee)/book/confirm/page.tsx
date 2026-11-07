@@ -6,6 +6,7 @@ import { requireEmployee } from '@/lib/auth/guards';
 import { requireBookable, publicPsychologist } from '@/lib/booking/queries';
 import { getAvailableSlots } from '@/lib/booking/slots';
 import { localDate, displayDate, displayTime } from '@/lib/dates';
+import { SESSION_MINUTES } from '@/lib/constants';
 import { Avatar, Note } from '@/components/ui/primitives';
 import { ConfirmForm } from '@/components/booking/confirm-form';
 export default async function Confirm({
@@ -58,7 +59,7 @@ export default async function Confirm({
           <dd>{displayDate(start, 'EEEE, d MMMM yyyy')}</dd>
           <dt>{t('booking.time')}</dt>
           <dd>
-            {displayTime(start)}–{displayTime(new Date(+start + 50 * 60000))}
+            {displayTime(start)}–{displayTime(new Date(+start + SESSION_MINUTES * 60000))}
           </dd>
           <dt>{t('booking.where')}</dt>
           <dd>{t('booking.whereValue')}</dd>

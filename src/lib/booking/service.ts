@@ -13,6 +13,7 @@ import {
 import { getRemaining } from './allowance';
 import { getAvailableSlots } from './slots';
 import { localDate } from '@/lib/dates';
+import { SESSION_MINUTES } from '@/lib/constants';
 import { placeholders } from '@/content/placeholders';
 import { settleExpired } from './settle';
 export class BookingError extends Error {
@@ -88,7 +89,7 @@ export async function createBooking(
           psychologistId: psychologist.id,
           organizationId: locked.organizationId,
           startsAt: start,
-          endsAt: new Date(+start + 50 * 60000),
+          endsAt: new Date(+start + SESSION_MINUTES * 60000),
         })
         .returning();
       await tx.insert(sessionLedger).values({

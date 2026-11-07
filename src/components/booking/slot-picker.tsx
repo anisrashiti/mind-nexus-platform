@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ChevronLeft, ChevronRight, ArrowRight, Clock3 } from 'lucide-react';
 import { Button, DayChip, TimeSlot, Note } from '@/components/ui/primitives';
 import { localDate, nextDate, weekStart, displayDate, displayTime } from '@/lib/dates';
+import { SESSION_MINUTES } from '@/lib/constants';
 export function SlotPicker({ slots, today }: { slots: string[]; today: string }) {
   const t = useTranslations('booking');
   const c = useTranslations('common');
@@ -37,6 +38,13 @@ export function SlotPicker({ slots, today }: { slots: string[]; today: string })
           ))}
         </div>
       </div>
+    );
+  if (!slots.length)
+    return (
+      <section className="card stack booking-panel" style={{ gap: 12 }}>
+        <h2 className="book-heading">{t('noTimesTitle')}</h2>
+        <p className="muted">{t('noTimesDescription')}</p>
+      </section>
     );
   return (
     <section className="card stack booking-panel" style={{ gap: 20 }}>
@@ -108,7 +116,7 @@ export function SlotPicker({ slots, today }: { slots: string[]; today: string })
       <div className="booking-actions stack" style={{ gap: 16 }}>
         <Note icon={<Clock3 />}>
           {selected
-            ? `${displayDate(new Date(selected), 'EEE d MMM')} · ${displayTime(new Date(selected))}–${displayTime(new Date(+new Date(selected) + 50 * 60000))}`
+            ? `${displayDate(new Date(selected), 'EEE d MMM')} · ${displayTime(new Date(selected))}–${displayTime(new Date(+new Date(selected) + SESSION_MINUTES * 60000))}`
             : t('selectTime')}
         </Note>
         {selected ? (

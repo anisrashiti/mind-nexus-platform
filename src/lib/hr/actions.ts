@@ -18,7 +18,6 @@ import { sendEmail } from '@/lib/email/send';
 import { refundOnce } from '@/lib/booking/settle';
 import { notifyCancelled } from '@/lib/booking/notifications';
 import { parseInviteEmails } from './invites';
-import { demoEnabled } from '@/demo/config'; // DEMO: remove before production
 async function issueInvite(tx: Transaction, actor: User, employee: { id: string; email: string }) {
   const token = newToken();
   await tx
@@ -40,6 +39,27 @@ async function issueInvite(tx: Transaction, actor: User, employee: { id: string;
   });
   return { userId: employee.id, email: employee.email, token };
 }
+async function sendInvites(
+  organizationId: string,
+  issued: { userId: string; email: string; token: string }[],
+) {
+  if (!issued.length) return;
+  const [org] = await db()
+    .select({ name: organizations.name })
+    .from(organizations)
+    .where(eq(organizations.id, organizationId));
+  await Promise.all(
+    issued.map((invite) =>
+      sendEmail({
+        template: 'invite',
+        userId: invite.userId,
+        to: invite.email,
+        values: { organization: org.name },
+        href: `${process.env.APP_URL}/invite/${invite.token}`,
+      }).catch(() => console.error('email failure: invite', invite.userId)),
+    ),
+  );
+}
 export async function inviteEmployees(input: unknown) {
   const actor = await requireHr();
   const parsed = z.object({ emails: z.string().min(1).max(26000) }).safeParse(input);
@@ -57,7 +77,6 @@ export async function inviteEmployees(input: unknown) {
           email,
           fullName: '',
           role: 'employee',
-          isDemo: demoEnabled(), // DEMO: remove before production
           status: 'invited',
           invitedAt: new Date(),
         })
@@ -67,21 +86,7 @@ export async function inviteEmployees(input: unknown) {
     }
     return result;
   });
-  const [org] = await db()
-    .select({ name: organizations.name })
-    .from(organizations)
-    .where(eq(organizations.id, actor.organizationId!));
-  await Promise.all(
-    issued.map((invite) =>
-      sendEmail({
-        template: 'invite',
-        userId: invite.userId,
-        to: invite.email,
-        values: { organization: org.name },
-        href: `${process.env.APP_URL}/invite/${invite.token}`,
-      }).catch(() => console.error('email failure: invite', invite.userId)),
-    ),
-  );
+  await sendInvites(actor.organizationId!, issued);
   revalidatePath('/hr');
   return { success: true };
 }
@@ -104,19 +109,7 @@ export async function resendInvite(input: unknown) {
       .for('update');
     return employee ? issueInvite(tx, actor, employee) : null;
   });
-  if (invitation) {
-    const [org] = await db()
-      .select({ name: organizations.name })
-      .from(organizations)
-      .where(eq(organizations.id, actor.organizationId!));
-    await sendEmail({
-      template: 'invite',
-      userId: invitation.userId,
-      to: invitation.email,
-      values: { organization: org.name },
-      href: `${process.env.APP_URL}/invite/${invitation.token}`,
-    }).catch(() => console.error('email failure: invite', invitation.userId));
-  }
+  await sendInvites(actor.organizationId!, invitation ? [invitation] : []);
   return { success: true };
 }
 export async function deactivateEmployee(input: unknown) {
@@ -125,7 +118,7 @@ export async function deactivateEmployee(input: unknown) {
   if (!parsed.success) return { error: 'invalid' };
   const cancelled = await db().transaction(async (tx) => {
     const [employee] = await tx
-      .select({ id: users.id })
+      .select({ id: users.id, email: users.email })
       .from(users)
       .where(
         and(
@@ -144,12 +137,7 @@ export async function deactivateEmployee(input: unknown) {
       .where(
         and(
           eq(invites.organizationId, actor.organizationId!),
-          eq(
-            invites.email,
-            (
-              await tx.select({ email: users.email }).from(users).where(eq(users.id, employee.id))
-            )[0].email,
-          ),
+          eq(invites.email, employee.email),
           isNull(invites.acceptedAt),
         ),
       );

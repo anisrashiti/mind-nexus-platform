@@ -6,7 +6,6 @@ import { appointments, type User } from '@/lib/db/schema';
 import { encrypt, decrypt } from '@/lib/crypto';
 import { joinWindow } from '@/lib/booking/rules';
 import { participantExternalId, participantMetadata } from './signature';
-import { demoEnabled } from '@/demo/config'; // DEMO: remove before production
 const roomUrl = z.url().refine((value) => {
   const u = new URL(value);
   return (
@@ -14,7 +13,6 @@ const roomUrl = z.url().refine((value) => {
   );
 });
 export async function ensureVideoRoom(appointmentId: string, actor: User) {
-  if (demoEnabled()) return null; // DEMO: remove before production
   return db().transaction(async (tx) => {
     const [a] = await tx
       .select()
@@ -103,7 +101,6 @@ export async function ensureVideoRoom(appointmentId: string, actor: User) {
   });
 }
 export async function closeVideoRoom(appointmentId: string) {
-  if (demoEnabled()) return; // DEMO: remove before production
   const [a] = await db()
     .select({ meetingId: appointments.wherebyMeetingId })
     .from(appointments)

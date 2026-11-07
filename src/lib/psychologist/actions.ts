@@ -3,12 +3,24 @@ import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { requirePsychologist } from '@/lib/auth/guards';
-import { db } from '@/lib/db/client';
+import { db, type Transaction } from '@/lib/db/client';
 import { users, appointments, organizations, sessionLedger, auditLog } from '@/lib/db/schema';
 import { refundOnce } from '@/lib/booking/settle';
 import { notifyCancelled } from '@/lib/booking/notifications';
 import { singleOrganization } from '@/lib/organization/queries';
 import { sendEmail } from '@/lib/email/send';
+/** Lock the employee row first (same order as booking) to avoid deadlocks, then the appointment. */
+async function lockAppointment(tx: Transaction, id: string, psychologistId: string) {
+  const owned = and(eq(appointments.id, id), eq(appointments.psychologistId, psychologistId));
+  const [peek] = await tx
+    .select({ employeeId: appointments.employeeId })
+    .from(appointments)
+    .where(owned);
+  if (!peek) return null;
+  await tx.select({ id: users.id }).from(users).where(eq(users.id, peek.employeeId)).for('update');
+  const [a] = await tx.select().from(appointments).where(owned).for('update');
+  return a ?? null;
+}
 export async function decideOutcome(input: unknown) {
   const actor = await requirePsychologist();
   const parsed = z
@@ -16,21 +28,7 @@ export async function decideOutcome(input: unknown) {
     .safeParse(input);
   if (!parsed.success) return { error: 'invalid' };
   await db().transaction(async (tx) => {
-    const [peek] = await tx
-      .select({ employeeId: appointments.employeeId })
-      .from(appointments)
-      .where(and(eq(appointments.id, parsed.data.id), eq(appointments.psychologistId, actor.id)));
-    if (!peek) throw new Error('Unavailable');
-    await tx
-      .select({ id: users.id })
-      .from(users)
-      .where(eq(users.id, peek.employeeId))
-      .for('update');
-    const [a] = await tx
-      .select()
-      .from(appointments)
-      .where(and(eq(appointments.id, parsed.data.id), eq(appointments.psychologistId, actor.id)))
-      .for('update');
+    const a = await lockAppointment(tx, parsed.data.id, actor.id);
     if (!a || a.outcome !== 'pending' || !['late_cancelled', 'no_show'].includes(a.status)) return;
     if (parsed.data.decision === 'given_back') await refundOnce(tx, a, actor.id);
     await tx
@@ -53,21 +51,7 @@ export async function psychologistCancel(input: unknown) {
   const parsed = z.object({ id: z.uuid() }).safeParse(input);
   if (!parsed.success) return { error: 'invalid' };
   const appointment = await db().transaction(async (tx) => {
-    const [peek] = await tx
-      .select({ employeeId: appointments.employeeId })
-      .from(appointments)
-      .where(and(eq(appointments.id, parsed.data.id), eq(appointments.psychologistId, actor.id)));
-    if (!peek) return null;
-    await tx
-      .select({ id: users.id })
-      .from(users)
-      .where(eq(users.id, peek.employeeId))
-      .for('update');
-    const [a] = await tx
-      .select()
-      .from(appointments)
-      .where(and(eq(appointments.id, parsed.data.id), eq(appointments.psychologistId, actor.id)))
-      .for('update');
+    const a = await lockAppointment(tx, parsed.data.id, actor.id);
     if (!a || a.status !== 'confirmed' || a.endsAt <= new Date()) return null;
     await tx
       .update(appointments)

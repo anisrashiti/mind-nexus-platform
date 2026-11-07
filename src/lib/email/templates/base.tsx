@@ -4,7 +4,6 @@ import {
   Preview,
   Body,
   Container,
-  Img,
   Heading,
   Text,
   Button,
@@ -16,14 +15,12 @@ export function CalmEmail({
   action,
   href,
   footer,
-  appUrl,
 }: {
   subject: string;
   text: string;
   action: string;
   href: string;
   footer: string;
-  appUrl: string;
 }) {
   return (
     <Html lang="en">
@@ -39,7 +36,12 @@ export function CalmEmail({
             borderRadius: 20,
           }}
         >
-          <Img src={`${appUrl}/logo-mark.svg`} width="32" height="32" alt="Mind Nexus" />
+          {/* Text wordmark: Gmail and Outlook block SVG images. */}
+          <Text
+            style={{ fontFamily: 'Georgia,serif', fontSize: 22, fontWeight: 500, margin: '0 0 8px' }}
+          >
+            Mind Nexus
+          </Text>
           <Heading as="h1" style={{ fontFamily: 'Georgia,serif', fontSize: 28, fontWeight: 400 }}>
             {subject}
           </Heading>
