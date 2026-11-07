@@ -35,9 +35,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (!result.success) return null;
         const email = result.data.email.toLowerCase();
         const ip = clientIp(request.headers);
-        const perPair = await takeRateLimit('login', `${ip}:${email}`, 10, 15 * 60000);
-        const perIp = await takeRateLimit('login-ip', ip, 10, 15 * 60000);
-        if (!perPair || !perIp) return null;
+        if (!(await takeRateLimit('login', `${ip}:${email}`, 10, 15 * 60000))) return null;
         const user = (await db().select().from(users).where(eq(users.email, email)).limit(1))[0];
         // A valid dummy argon2 hash equalizes verification work for unknown/invited accounts.
         const fallback =

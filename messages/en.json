@@ -51,7 +51,7 @@
   },
   "auth": {
     "headline": "Support that fits\ninto your workday.",
-    "intro": "Confidential sessions with licensed psychologists, provided by your organization.",
+    "intro": "Confidential sessions with a licensed psychologist, provided by your organization.",
     "reassurance1": "Your employer never sees what you discuss",
     "reassurance2": "Sessions happen right here, by video",
     "reassurance3": "Book a session in under a minute",
@@ -65,7 +65,7 @@
     "unconfigured": "The platform is awaiting database configuration. Please contact your organization.",
     "invitedBy": "Invited by {organization}",
     "inviteTitle": "Set up your account",
-    "inviteDescription": "Confidential support with licensed psychologists, provided by your employer. It takes a minute.",
+    "inviteDescription": "Confidential support with a licensed psychologist, provided by your employer. It takes a minute.",
     "fullName": "Full name",
     "create": "Create account",
     "termsLabel": "I agree to the terms and privacy policy.",
@@ -108,7 +108,7 @@
     "opens": "Opens at {time}, 10 minutes before",
     "deadline": "Free cancellation until {weekday} {date}, {time}.",
     "complete": "Your session is complete",
-    "completeDescription": "Thank you for taking time for yourself. Your plan included one session, which you've now used.",
+    "completeDescription": "Thank you for taking time for yourself. Your plan's sessions have now been used.",
     "noAllowance": "You have no sessions available",
     "noAllowanceDescription": "Your included session is used or awaiting Luljeta's decision. Urgent help is always available.",
     "past": "Your past session",
@@ -270,6 +270,7 @@
     "emails": "Work email addresses",
     "send": "Send {count, plural, one {# invite} other {# invites}}",
     "inviteSent": "Invitations sent. Existing employees were skipped.",
+    "inviteFailed": "{count, plural, one {# invitation couldn't be sent} other {# invitations couldn't be sent}}. Try Resend invite.",
     "resend": "Resend invite",
     "resendSent": "Invitation sent if the employee is still invited.",
     "deactivate": "Deactivate access",
@@ -322,9 +323,9 @@
   },
   "legal": {
     "draft": "This content is awaiting client approval.",
-    "consentDraft": "The full informed consent must be reviewed and approved by Luljeta before launch. The summary below is provided for development review.",
-    "privacyDraft": "The privacy policy is awaiting the client's approved text.",
-    "termsDraft": "The terms are awaiting the client's approved text."
+    "consentBody": "TODO(content): Full informed consent for online sessions, reviewed and approved by Luljeta.",
+    "termsBody": "TODO(content): Terms of use approved by the client.",
+    "privacyBody": "TODO(content): Privacy policy approved by the client."
   },
   "email": {
     "inviteSubject": "{organization} has invited you to Mind Nexus",

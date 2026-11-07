@@ -7,6 +7,8 @@ import { TopBar } from '@/components/layout/app-chrome';
 import { Footer } from '@/components/layout/footer';
 import { StatCard, Note } from '@/components/ui/primitives';
 import { EmployeeTable } from '@/components/hr/employee-table';
+// Invites are sent one by one (~0.6 s each, up to 100), so allow the action time to finish.
+export const maxDuration = 300;
 export default async function Hr() {
   const actor = await requireHr();
   const t = await getTranslations('hr');

@@ -20,7 +20,10 @@ async function main() {
     process.env.SEED_HR_PASSWORD.length < 10
   )
     throw new Error('Seed passwords too short');
-  if (process.env.NODE_ENV === 'production' && process.env.SEED_DEMO === '1')
+  if (
+    process.env.SEED_DEMO === '1' &&
+    (process.env.NODE_ENV === 'production' || !!process.env.APP_URL?.startsWith('https://'))
+  )
     throw new Error('Demo seeding is development only');
   const connection = postgres(process.env.DATABASE_URL, { max: 1, onnotice: () => {} });
   const database = drizzle(connection);

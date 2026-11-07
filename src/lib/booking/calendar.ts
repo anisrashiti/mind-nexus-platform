@@ -5,6 +5,8 @@ const stamp = (value: Date) =>
     .toISOString()
     .replace(/[-:]/g, '')
     .replace(/\.\d{3}/, '');
+/** RFC 5545 TEXT escaping for backslashes, semicolons, commas and newlines. */
+const text = (value: string) => value.replace(/[\\;,]/g, '\\$&').replace(/\r?\n/g, '\\n');
 export function calendarFile(
   appointment: { id: string; startsAt: Date; endsAt: Date },
   now = new Date(),
@@ -20,8 +22,8 @@ export function calendarFile(
     `DTSTAMP:${stamp(now)}`,
     `DTSTART:${stamp(appointment.startsAt)}`,
     `DTEND:${stamp(appointment.endsAt)}`,
-    `SUMMARY:${t('common.brand')}`,
-    `DESCRIPTION:${t('booking.whereValue')}`,
+    `SUMMARY:${text(t('common.brand'))}`,
+    `DESCRIPTION:${text(t('booking.whereValue'))}`,
     'CLASS:PRIVATE',
     'END:VEVENT',
     'END:VCALENDAR',

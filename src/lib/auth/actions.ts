@@ -42,7 +42,7 @@ export async function forgotAction(_: AuthState, form: FormData): Promise<AuthSt
   const h = await headers();
   const ip = clientIp(h);
   if (
-    !(await takeRateLimit('reset-ip', ip, 5, 3600000)) ||
+    !(await takeRateLimit('reset-ip', ip, 50, 3600000)) ||
     !(await takeRateLimit('reset-email', parsed.data, 5, 3600000))
   )
     return { success: true };

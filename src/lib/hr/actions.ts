@@ -2,6 +2,7 @@
 import { and, eq, isNull, gt } from 'drizzle-orm';
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
+import { after } from 'next/server';
 import { requireHr } from '@/lib/auth/guards';
 import { db, type Transaction } from '@/lib/db/client';
 import {
@@ -43,22 +44,27 @@ async function sendInvites(
   organizationId: string,
   issued: { userId: string; email: string; token: string }[],
 ) {
-  if (!issued.length) return;
+  if (!issued.length) return 0;
   const [org] = await db()
     .select({ name: organizations.name })
     .from(organizations)
     .where(eq(organizations.id, organizationId));
-  await Promise.all(
-    issued.map((invite) =>
-      sendEmail({
-        template: 'invite',
-        userId: invite.userId,
-        to: invite.email,
-        values: { organization: org.name },
-        href: `${process.env.APP_URL}/invite/${invite.token}`,
-      }).catch(() => console.error('email failure: invite', invite.userId)),
-    ),
-  );
+  // Sequential with a gap to stay under the email provider's per-second rate limit.
+  let failed = 0;
+  for (const [index, invite] of issued.entries()) {
+    if (index) await new Promise((resolve) => setTimeout(resolve, 600));
+    await sendEmail({
+      template: 'invite',
+      userId: invite.userId,
+      to: invite.email,
+      values: { organization: org.name },
+      href: `${process.env.APP_URL}/invite/${invite.token}`,
+    }).catch(() => {
+      failed++;
+      console.error('email failure: invite', invite.userId);
+    });
+  }
+  return failed;
 }
 export async function inviteEmployees(input: unknown) {
   const actor = await requireHr();
@@ -86,9 +92,9 @@ export async function inviteEmployees(input: unknown) {
     }
     return result;
   });
-  await sendInvites(actor.organizationId!, issued);
+  const failed = await sendInvites(actor.organizationId!, issued);
   revalidatePath('/hr');
-  return { success: true };
+  return { success: true, failed };
 }
 export async function resendInvite(input: unknown) {
   const actor = await requireHr();
@@ -109,8 +115,8 @@ export async function resendInvite(input: unknown) {
       .for('update');
     return employee ? issueInvite(tx, actor, employee) : null;
   });
-  await sendInvites(actor.organizationId!, invitation ? [invitation] : []);
-  return { success: true };
+  const failed = await sendInvites(actor.organizationId!, invitation ? [invitation] : []);
+  return { success: true, failed };
 }
 export async function deactivateEmployee(input: unknown) {
   const actor = await requireHr();
@@ -168,9 +174,12 @@ export async function deactivateEmployee(input: unknown) {
     }
     return future;
   });
-  await Promise.all(
-    cancelled.map((a) =>
-      notifyCancelled(a, false, true).catch(() => console.error('email failure: cancelled', a.id)),
+  // After the response, so response time never reveals whether an appointment existed.
+  after(() =>
+    Promise.all(
+      cancelled.map((a) =>
+        notifyCancelled(a, false, true).catch(() => console.error('email failure: cancelled', a.id)),
+      ),
     ),
   );
   revalidatePath('/hr');

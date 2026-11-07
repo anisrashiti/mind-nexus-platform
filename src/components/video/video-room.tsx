@@ -35,7 +35,7 @@ export function VideoRoom({
       <section className="video-placeholder stack">
         <Video size={40} />
         <h2>{t(failed ? 'video.unavailable' : 'video.placeholder')}</h2>
-        <p>{t('video.placeholderDescription')}</p>
+        {!failed && <p>{t('video.placeholderDescription')}</p>}
         <Link href={home} className="btn btn-secondary">
           {t('common.goHome')}
         </Link>

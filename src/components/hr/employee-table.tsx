@@ -21,7 +21,7 @@ function EmployeeMenu({
   onMessage,
 }: {
   employee: Employee;
-  onMessage: (key: string) => void;
+  onMessage: (key: string, values?: { count: number }) => void;
 }) {
   const t = useTranslations();
   const [confirm, setConfirm] = useState(false);
@@ -48,8 +48,9 @@ function EmployeeMenu({
                 onSelect={() =>
                   start(async () => {
                     try {
-                      await resendInvite({ employeeId: employee.id });
-                      onMessage('resendSent');
+                      const result = await resendInvite({ employeeId: employee.id });
+                      if (result.failed) onMessage('inviteFailed', { count: result.failed });
+                      else onMessage('resendSent');
                     } catch {
                       onMessage('error');
                     }
@@ -121,8 +122,8 @@ export function EmployeeTable({ employees }: { employees: Employee[] }) {
       (e.fullName + ' ' + e.email).toLowerCase().includes(search.toLowerCase()) &&
       (filter === 'all' || e.status === filter),
   );
-  const showMessage = (key: string) =>
-    setToast(key === 'error' ? t('common.error') : t(`hr.${key}`));
+  const showMessage = (key: string, values?: { count: number }) =>
+    setToast(key === 'error' ? t('common.error') : t(`hr.${key}`, values));
   return (
     <>
       <div className="toolbar">
@@ -180,7 +181,8 @@ export function EmployeeTable({ employees }: { employees: Employee[] }) {
                       setInviteOpen(false);
                       setDraft('');
                       setChips([]);
-                      showMessage('inviteSent');
+                      if (result.failed) showMessage('inviteFailed', { count: result.failed });
+                      else showMessage('inviteSent');
                     }
                   } catch {
                     setError(t('common.error'));

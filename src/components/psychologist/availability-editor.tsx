@@ -58,7 +58,11 @@ export function AvailabilityEditor({
               variant="ghost"
               onClick={() => {
                 const monday = rules.filter((r) => r.weekday === 1);
-                setRules(days.flatMap((_, i) => monday.map((r) => ({ ...r, weekday: i + 1 }))));
+                // Tue–Fri only: the booking UI shows weekdays, so weekend rules stay as they are.
+                setRules([
+                  ...rules.filter((r) => r.weekday === 1 || r.weekday > 5),
+                  ...[2, 3, 4, 5].flatMap((weekday) => monday.map((r) => ({ ...r, weekday }))),
+                ]);
               }}
             >
               <Copy />
